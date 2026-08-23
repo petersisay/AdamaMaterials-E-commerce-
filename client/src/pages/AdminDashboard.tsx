@@ -499,68 +499,68 @@ const AdminDashboard: React.FC = () => {
       </div>
 
       {/* Tabs */}
-      <div className="flex gap-2 border-b border-slate-200 pb-3 flex-wrap">
+      <div className="flex gap-2.5 border-b border-slate-200 pb-3 flex-wrap">
         <button 
           onClick={() => setActiveTab('METRICS')}
-          className={`px-4 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 ${activeTab === 'METRICS' ? 'bg-primary-600 text-white shadow-md' : 'text-slate-500 hover:bg-slate-100'}`}
+          className={`px-4.5 py-2.5 rounded-xl text-sm font-bold transition-all flex items-center gap-2 cursor-pointer ${activeTab === 'METRICS' ? 'bg-primary-600 text-white shadow-md' : 'text-slate-600 hover:bg-slate-100'}`}
         >
-          <LayoutGrid className="w-4 h-4" />
+          <LayoutGrid className="w-4.5 h-4.5" />
           Metrics
         </button>
         <button 
           onClick={() => setActiveTab('USERS')}
-          className={`px-4 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 ${activeTab === 'USERS' ? 'bg-primary-600 text-white shadow-md' : 'text-slate-500 hover:bg-slate-100'}`}
+          className={`px-4.5 py-2.5 rounded-xl text-sm font-bold transition-all flex items-center gap-2 cursor-pointer ${activeTab === 'USERS' ? 'bg-primary-600 text-white shadow-md' : 'text-slate-600 hover:bg-slate-100'}`}
         >
-          <Users className="w-4 h-4" />
+          <Users className="w-4.5 h-4.5" />
           Users Moderation
         </button>
         <button 
           onClick={() => setActiveTab('PRODUCTS')}
-          className={`px-4 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 ${activeTab === 'PRODUCTS' ? 'bg-primary-600 text-white shadow-md' : 'text-slate-500 hover:bg-slate-100'}`}
+          className={`px-4.5 py-2.5 rounded-xl text-sm font-bold transition-all flex items-center gap-2 cursor-pointer ${activeTab === 'PRODUCTS' ? 'bg-primary-600 text-white shadow-md' : 'text-slate-600 hover:bg-slate-100'}`}
         >
-          <FileCheck className="w-4 h-4" />
+          <FileCheck className="w-4.5 h-4.5" />
           Approvals Queue ({pendingProductReviews.length})
         </button>
         <button 
           onClick={() => setActiveTab('BANK_VERIFICATION')}
-          className={`px-4 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 ${activeTab === 'BANK_VERIFICATION' ? 'bg-primary-600 text-white shadow-md' : 'text-slate-500 hover:bg-slate-100'}`}
+          className={`px-4.5 py-2.5 rounded-xl text-sm font-bold transition-all flex items-center gap-2 cursor-pointer ${activeTab === 'BANK_VERIFICATION' ? 'bg-primary-600 text-white shadow-md' : 'text-slate-600 hover:bg-slate-100'}`}
         >
-          <Landmark className="w-4 h-4" />
+          <Landmark className="w-4.5 h-4.5" />
           Payment Verifications
           {bankPayments.length > 0 ? (
-            <span className="ml-1 bg-rose-500 text-white text-[9px] font-black px-1.5 py-0.5 rounded-full animate-pulse">
+            <span className="ml-1 bg-rose-500 text-white text-xs font-black px-2 py-0.5 rounded-full animate-pulse">
               {bankPayments.length}
             </span>
           ) : (
-            <span className="ml-1 text-slate-400">(0)</span>
+            <span className="ml-1 text-slate-400 text-xs">(0)</span>
           )}
         </button>
         <button 
           onClick={() => setActiveTab('DELIVERIES')}
-          className={`px-4 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 ${activeTab === 'DELIVERIES' ? 'bg-primary-600 text-white shadow-md' : 'text-slate-500 hover:bg-slate-100'}`}
+          className={`px-4.5 py-2.5 rounded-xl text-sm font-bold transition-all flex items-center gap-2 cursor-pointer ${activeTab === 'DELIVERIES' ? 'bg-primary-600 text-white shadow-md' : 'text-slate-600 hover:bg-slate-100'}`}
         >
-          <Truck className="w-4 h-4" />
+          <Truck className="w-4.5 h-4.5" />
           Delivery Tracking ({deliveries.length})
         </button>
         <button 
           onClick={() => setActiveTab('DISPUTES')}
-          className={`px-4 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 ${activeTab === 'DISPUTES' ? 'bg-primary-600 text-white shadow-md' : 'text-slate-500 hover:bg-slate-100'}`}
+          className={`px-4.5 py-2.5 rounded-xl text-sm font-bold transition-all flex items-center gap-2 cursor-pointer ${activeTab === 'DISPUTES' ? 'bg-primary-600 text-white shadow-md' : 'text-slate-600 hover:bg-slate-100'}`}
         >
-          <AlertOctagon className="w-4 h-4" />
+          <AlertOctagon className="w-4.5 h-4.5" />
           Disputes Arbiter ({disputes.filter(d => d.status === 'OPEN').length})
         </button>
         <button 
           onClick={() => setActiveTab('CONFIG')}
-          className={`px-4 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 ${activeTab === 'CONFIG' ? 'bg-primary-600 text-white shadow-md' : 'text-slate-500 hover:bg-slate-100'}`}
+          className={`px-4.5 py-2.5 rounded-xl text-sm font-bold transition-all flex items-center gap-2 cursor-pointer ${activeTab === 'CONFIG' ? 'bg-primary-600 text-white shadow-md' : 'text-slate-600 hover:bg-slate-100'}`}
         >
-          <Landmark className="w-4 h-4" />
+          <Landmark className="w-4.5 h-4.5" />
           Configurations
         </button>
         <button 
           onClick={() => setActiveTab('AUDIT_LOGS')}
-          className={`px-4 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 ${activeTab === 'AUDIT_LOGS' ? 'bg-primary-600 text-white shadow-md' : 'text-slate-500 hover:bg-slate-100'}`}
+          className={`px-4.5 py-2.5 rounded-xl text-sm font-bold transition-all flex items-center gap-2 cursor-pointer ${activeTab === 'AUDIT_LOGS' ? 'bg-primary-600 text-white shadow-md' : 'text-slate-600 hover:bg-slate-100'}`}
         >
-          <ShieldCheck className="w-4 h-4" />
+          <ShieldCheck className="w-4.5 h-4.5" />
           Audit Logs
         </button>
       </div>
@@ -573,20 +573,20 @@ const AdminDashboard: React.FC = () => {
           <div className="space-y-8">
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
               <div className="bg-white border border-slate-200 p-6 rounded-2xl shadow-sm">
-                <span className="text-[10px] text-slate-400 font-bold uppercase block">Total Revenue</span>
-                <span className="text-xl font-black text-slate-900">{(stats.finance.revenue).toLocaleString()} ETB</span>
+                <span className="text-xs text-slate-500 font-extrabold uppercase tracking-wider block">Total Revenue</span>
+                <span className="text-2xl font-black text-slate-900 mt-1 block">{(stats.finance.revenue).toLocaleString()} ETB</span>
               </div>
               <div className="bg-white border border-slate-200 p-6 rounded-2xl shadow-sm">
-                <span className="text-[10px] text-slate-400 font-bold uppercase block">Delivery Fees</span>
-                <span className="text-xl font-black text-slate-900">{(stats.finance.deliveryFees).toLocaleString()} ETB</span>
+                <span className="text-xs text-slate-500 font-extrabold uppercase tracking-wider block">Delivery Fees</span>
+                <span className="text-2xl font-black text-slate-900 mt-1 block">{(stats.finance.deliveryFees).toLocaleString()} ETB</span>
               </div>
               <div className="bg-white border border-slate-200 p-6 rounded-2xl shadow-sm">
-                <span className="text-[10px] text-slate-400 font-bold uppercase block">Seller Paid Payouts</span>
-                <span className="text-xl font-black text-slate-900">{(stats.finance.payouts.PAID).toLocaleString()} ETB</span>
+                <span className="text-xs text-slate-500 font-extrabold uppercase tracking-wider block">Seller Paid Payouts</span>
+                <span className="text-2xl font-black text-slate-900 mt-1 block">{(stats.finance.payouts.PAID).toLocaleString()} ETB</span>
               </div>
               <div className="bg-white border border-slate-200 p-6 rounded-2xl shadow-sm">
-                <span className="text-[10px] text-slate-400 font-bold uppercase block">Active Disputes</span>
-                <span className="text-xl font-black text-rose-600">{stats.disputes.pending} pending</span>
+                <span className="text-xs text-slate-500 font-extrabold uppercase tracking-wider block">Active Disputes</span>
+                <span className="text-2xl font-black text-rose-600 mt-1 block">{stats.disputes.pending} pending</span>
               </div>
             </div>
             

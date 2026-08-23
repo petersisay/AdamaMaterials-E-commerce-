@@ -24,6 +24,7 @@ client/.env
 AdamaMaterials_Marketplace_v1.0_Deploy/
 managed-marketplace/
 20260813_*.jpg
+App-revola/
 
 # Logs
 npm-debug.log*

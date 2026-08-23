@@ -29,8 +29,8 @@ const MainLayout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [notifications, setNotifications] = useState<any[]>([]);
   const [unreadNotifications, setUnreadNotifications] = useState(0);
 
-  // Policy Modal state ('TERMS' | 'ESCROW' | 'SELLER_GUIDELINES' | null)
-  const [activePolicy, setActivePolicy] = useState<'TERMS' | 'ESCROW' | 'SELLER_GUIDELINES' | null>(null);
+  // Policy Modal state ('TERMS' | 'ESCROW' | 'SELLER_GUIDELINES' | 'ABOUT' | null)
+  const [activePolicy, setActivePolicy] = useState<'TERMS' | 'ESCROW' | 'SELLER_GUIDELINES' | 'ABOUT' | null>(null);
 
   const navigate = useNavigate();
   const location = useLocation();
@@ -117,6 +117,13 @@ const MainLayout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
               <MapPin className="w-4 h-4 text-emerald-600" />
               Marketplace Map
             </Link>
+            <button
+              onClick={() => setActivePolicy('ABOUT')}
+              className="text-sm font-semibold text-slate-700 hover:text-primary-600 transition-colors flex items-center gap-1.5 cursor-pointer"
+            >
+              <Store className="w-4 h-4 text-orange-500" />
+              About Revola
+            </button>
             {user && (
               <Link
                 to={getDashboardLink()}
@@ -296,6 +303,17 @@ const MainLayout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
                   <MapPin className="w-5 h-5 text-emerald-600" />
                   Marketplace Map
                 </Link>
+
+                <button
+                  onClick={() => {
+                    setMobileMenuOpen(false);
+                    setActivePolicy('ABOUT');
+                  }}
+                  className="text-left text-base font-semibold text-slate-700 hover:text-primary-600 py-2 border-b border-slate-100 flex items-center gap-2 cursor-pointer"
+                >
+                  <Store className="w-5 h-5 text-orange-500" />
+                  About Revola
+                </button>
                 {user ? (
                   <>
                     <Link
@@ -464,6 +482,17 @@ const MainLayout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
               {/* Policy Quick Tabs */}
               <div className="flex border-b border-slate-200 bg-slate-50 px-6 pt-3 gap-2 overflow-x-auto text-xs font-bold">
                 <button
+                  onClick={() => setActivePolicy('ABOUT')}
+                  className={`pb-2.5 px-3 border-b-2 transition-colors cursor-pointer flex items-center gap-1.5 ${
+                    activePolicy === 'ABOUT'
+                      ? 'border-primary-600 text-primary-900 font-extrabold'
+                      : 'border-transparent text-slate-500 hover:text-slate-800'
+                  }`}
+                >
+                  <Store className="w-3.5 h-3.5" />
+                  About Revola
+                </button>
+                <button
                   onClick={() => setActivePolicy('TERMS')}
                   className={`pb-2.5 px-3 border-b-2 transition-colors cursor-pointer flex items-center gap-1.5 ${
                     activePolicy === 'TERMS'
@@ -478,18 +507,18 @@ const MainLayout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
                   onClick={() => setActivePolicy('ESCROW')}
                   className={`pb-2.5 px-3 border-b-2 transition-colors cursor-pointer flex items-center gap-1.5 ${
                     activePolicy === 'ESCROW'
-                      ? 'border-emerald-600 text-emerald-900 font-extrabold'
+                      ? 'border-primary-600 text-primary-900 font-extrabold'
                       : 'border-transparent text-slate-500 hover:text-slate-800'
                   }`}
                 >
                   <ShieldCheck className="w-3.5 h-3.5 text-emerald-600" />
-                  Buyer Escrow Protection
+                  Buyer Protection
                 </button>
                 <button
                   onClick={() => setActivePolicy('SELLER_GUIDELINES')}
                   className={`pb-2.5 px-3 border-b-2 transition-colors cursor-pointer flex items-center gap-1.5 ${
                     activePolicy === 'SELLER_GUIDELINES'
-                      ? 'border-sky-600 text-sky-900 font-extrabold'
+                      ? 'border-primary-600 text-primary-900 font-extrabold'
                       : 'border-transparent text-slate-500 hover:text-slate-800'
                   }`}
                 >
@@ -499,7 +528,49 @@ const MainLayout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
               </div>
 
               {/* Modal Content */}
-              <div className="p-6 overflow-y-auto space-y-4 text-sm text-slate-700 leading-relaxed">
+              <div className="p-6 overflow-y-auto space-y-4 text-slate-700 text-sm leading-relaxed">
+                {activePolicy === 'ABOUT' && (
+                  <div className="space-y-4">
+                    <div className="p-4 bg-orange-50 border border-orange-200 rounded-xl text-orange-950 text-sm flex items-start gap-3">
+                      <Store className="w-5 h-5 flex-shrink-0 text-orange-600 mt-0.5" />
+                      <div>
+                        <strong className="block font-black text-orange-900 text-base mb-1">
+                          Revola — Every Good Thing Deserves a Second Life
+                        </strong>
+                        <span>
+                          Revola is Adama City's premier circular economy marketplace dedicated to buying, selling, and reusing usable materials, structural timber, reclaimed steel, scrap metals, plastics, and appliances.
+                        </span>
+                      </div>
+                    </div>
+
+                    <div>
+                      <h4 className="font-bold text-slate-900 text-sm">
+                        🌿 Our Environmental & Economic Mission
+                      </h4>
+                      <p className="text-xs text-slate-600 mt-1">
+                        Construction projects and workshops produce high volumes of reusable materials that often end up in landfills. Revola connects local contractors, scrap depots, merchants, and builders in Adama to circulate usable surplus materials at affordable prices.
+                      </p>
+                    </div>
+
+                    <div>
+                      <h4 className="font-bold text-slate-900 text-sm">
+                        🛡️ 100% Escrow Protection & Local Dispatch
+                      </h4>
+                      <p className="text-xs text-slate-600 mt-1">
+                        When buyers order on Revola, funds are securely held in escrow. Our verified logistics drivers pick up the materials from local Adama depots and deliver them directly to your work site. Sellers only receive payouts after the buyer verifies receipt.
+                      </p>
+                    </div>
+
+                    <div>
+                      <h4 className="font-bold text-slate-900 text-sm">
+                        📍 Serving All 9 Adama Subcities
+                      </h4>
+                      <p className="text-xs text-slate-600 mt-1">
+                        Bole, Aba Geda, Goro, Boku, Kebele 02, Kebele 03, Kebele 04, Industry Zone, and Wonji Road with real-time route tracking and fair localized delivery fees.
+                      </p>
+                    </div>
+                  </div>
+                )}
                 {activePolicy === 'TERMS' && (
                   <div className="space-y-4">
                     <div className="p-3.5 bg-amber-50 border border-amber-200 rounded-xl text-amber-900 text-xs flex items-center gap-2.5">
