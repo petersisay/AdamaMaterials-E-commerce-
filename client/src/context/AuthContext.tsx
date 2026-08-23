@@ -5,6 +5,7 @@ import { useToast } from './ToastContext';
 export interface User {
   _id: string;
   name: string;
+  username?: string;
   email: string;
   avatar?: string;
   phoneNumber?: string;
@@ -40,10 +41,13 @@ interface GoogleAuthResult {
 interface AuthContextType {
   user: User | null;
   loading: boolean;
-  login: (email: string, password: string) => Promise<User | null>;
-  register: (name: string, email: string, password: string, role: string) => Promise<User | null>;
-  googleLogin: (credential?: string, accessToken?: string) => Promise<GoogleAuthResult>;
+  login: (identifier: string, password: string) => Promise<User | null>;
+  register: (name: string, email: string, password: string, role: string, username?: string) => Promise<User | null>;
+  googleLogin: (credential?: string, accessToken?: string, role?: string) => Promise<GoogleAuthResult>;
   completeOnboarding: (data: any) => Promise<User | null>;
+  updateProfile: (data: { name?: string; username?: string; phoneNumber?: string; avatar?: string }) => Promise<User | null>;
+  uploadAvatar: (file: File) => Promise<string | null>;
+  updatePassword: (currentPassword: string, newPassword: string) => Promise<boolean>;
   setUser: React.Dispatch<React.SetStateAction<User | null>>;
   logout: () => Promise<void>;
   checkAuth: () => Promise<void>;
@@ -90,30 +94,41 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     };
   }, [showToast]);
 
-  const login = async (email: string, password: string): Promise<User | null> => {
+  const login = async (identifier: string, password: string): Promise<User | null> => {
     try {
-      const response = await api.post('/auth/login', { email, password });
+      const response = await api.post('/auth/login', {
+        identifier,
+        email: identifier,
+        password,
+      });
       if (response.data.success) {
         const loggedInUser: User = response.data.user;
         setUser(loggedInUser);
-        showToast(`Welcome back, ${loggedInUser.name}!`, 'success');
+        showToast(`Welcome back, ${loggedInUser.name || loggedInUser.username}!`, 'success');
         return loggedInUser;
       }
       return null;
     } catch (error: any) {
-      const msg = error.response?.data?.message || 'Login failed. Check your credentials.';
+      const msg = error.response?.data?.message || 'Login failed. Check your username/email and password.';
       showToast(msg, 'error');
       return null;
     }
   };
 
-  const register = async (name: string, email: string, password: string, role: string): Promise<User | null> => {
+  const register = async (name: string, email: string, password: string, role: string, username?: string): Promise<User | null> => {
     try {
-      const response = await api.post('/auth/register', { name, email, password, role });
+      const cleanUsername = username?.trim() || email.split('@')[0];
+      const response = await api.post('/auth/register', {
+        name: name.trim() || cleanUsername,
+        username: cleanUsername,
+        email: email.trim().toLowerCase(),
+        password,
+        role,
+      });
       if (response.data.success) {
         const newUser: User = response.data.user;
         setUser(newUser);
-        showToast('Registration successful! Welcome aboard.', 'success');
+        showToast(`Account created successfully! Welcome, @${newUser.username || cleanUsername}.`, 'success');
         return newUser;
       }
       return null;
@@ -121,6 +136,63 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       const msg = error.response?.data?.message || 'Registration failed. Try again.';
       showToast(msg, 'error');
       return null;
+    }
+  };
+
+  const updateProfile = async (data: { name?: string; username?: string; phoneNumber?: string; avatar?: string }): Promise<User | null> => {
+    try {
+      const response = await api.put('/auth/updatedetails', data);
+      if (response.data.success) {
+        const updated: User = response.data.user;
+        setUser(updated);
+        showToast('Profile updated successfully!', 'success');
+        return updated;
+      }
+      return null;
+    } catch (error: any) {
+      const msg = error.response?.data?.message || 'Failed to update profile.';
+      showToast(msg, 'error');
+      return null;
+    }
+  };
+
+  const uploadAvatar = async (file: File): Promise<string | null> => {
+    try {
+      const formData = new FormData();
+      formData.append('avatar', file);
+      const response = await api.post('/auth/avatar', formData, {
+        headers: { 'Content-Type': 'multipart/form-data' },
+      });
+      if (response.data.success) {
+        const avatarUrl = response.data.avatar || response.data.user?.avatar;
+        if (response.data.user) {
+          setUser(response.data.user);
+        } else if (avatarUrl) {
+          setUser((prev) => (prev ? { ...prev, avatar: avatarUrl } : prev));
+        }
+        showToast('Profile photo updated successfully!', 'success');
+        return avatarUrl;
+      }
+      return null;
+    } catch (error: any) {
+      const msg = error.response?.data?.message || 'Failed to upload profile photo.';
+      showToast(msg, 'error');
+      return null;
+    }
+  };
+
+  const updatePassword = async (currentPassword: string, newPassword: string): Promise<boolean> => {
+    try {
+      const response = await api.put('/auth/updatepassword', { currentPassword, newPassword });
+      if (response.data.success) {
+        showToast('Password changed successfully!', 'success');
+        return true;
+      }
+      return false;
+    } catch (error: any) {
+      const msg = error.response?.data?.message || 'Failed to update password.';
+      showToast(msg, 'error');
+      return false;
     }
   };
 
@@ -182,6 +254,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         register,
         googleLogin,
         completeOnboarding,
+        updateProfile,
+        uploadAvatar,
+        updatePassword,
         setUser,
         logout,
         checkAuth,

@@ -1,6 +1,21 @@
 const express = require('express');
+const multer = require('multer');
 const authController = require('../controllers/authController');
 const { protect } = require('../middleware/auth');
+
+const upload = multer({
+  storage: multer.memoryStorage(),
+  limits: {
+    fileSize: 5 * 1024 * 1024, // 5MB max
+  },
+  fileFilter: (req, file, cb) => {
+    if (file.mimetype.startsWith('image/')) {
+      cb(null, true);
+    } else {
+      cb(new Error('Only images are allowed.'), false);
+    }
+  },
+});
 
 const router = express.Router();
 
@@ -20,7 +35,7 @@ router.get('/me', authController.getMe);
 router.put('/me/update', authController.updateMe);
 router.put('/updatedetails', authController.updateDetails);
 router.put('/updatepassword', authController.updatePassword);
-router.post('/avatar', authController.uploadAvatar);
+router.post('/avatar', upload.single('avatar'), authController.uploadAvatar);
 router.post('/onboarding', authController.completeOnboarding);
 router.put('/seller/location', authController.updateSellerLocation);
 

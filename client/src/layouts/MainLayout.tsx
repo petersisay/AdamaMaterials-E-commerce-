@@ -20,12 +20,14 @@ import {
 } from 'lucide-react';
 import BrandLogo from '../components/BrandLogo';
 import ThemeToggle from '../components/ThemeToggle';
+import UserProfileModal from '../components/UserProfileModal';
 import api from '../services/api';
 
 const MainLayout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { user, logout } = useAuth();
   const { items } = useCart();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [profileModalOpen, setProfileModalOpen] = useState(false);
   const [notificationsOpen, setNotificationsOpen] = useState(false);
   const [notifications, setNotifications] = useState<any[]>([]);
   const [unreadNotifications, setUnreadNotifications] = useState(0);
@@ -221,14 +223,34 @@ const MainLayout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
                   </Link>
                 )}
 
-                <div className="flex items-center gap-2 pl-2 border-l border-slate-200">
-                  <div className="text-right">
-                    <div className="text-xs font-semibold text-slate-800">{user.name}</div>
-                    <div className="text-[10px] text-slate-400 font-bold uppercase">{user.role}</div>
-                  </div>
+                <div className="flex items-center gap-2 pl-2 border-l border-slate-200 dark:border-slate-800">
+                  <button
+                    onClick={() => setProfileModalOpen(true)}
+                    title="View / Edit Profile"
+                    className="flex items-center gap-2 px-2.5 py-1.5 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors text-right cursor-pointer group"
+                  >
+                    <div className="w-8 h-8 rounded-full overflow-hidden bg-primary-100 dark:bg-primary-950/60 border border-primary-500/40 flex items-center justify-center shrink-0">
+                      {user.avatar ? (
+                        <img src={user.avatar} alt={user.name} className="w-full h-full object-cover" />
+                      ) : (
+                        <span className="text-xs font-black text-primary-600 dark:text-primary-400">
+                          {(user.name || user.email || 'U')[0].toUpperCase()}
+                        </span>
+                      )}
+                    </div>
+                    <div className="text-left hidden sm:block">
+                      <div className="text-xs font-semibold text-slate-800 dark:text-slate-100 group-hover:text-primary-600 dark:group-hover:text-primary-400 transition-colors">
+                        {user.name}
+                      </div>
+                      <div className="text-[10px] text-slate-400 dark:text-slate-400 font-bold uppercase">
+                        @{user.username || user.email.split('@')[0]} • {user.role}
+                      </div>
+                    </div>
+                  </button>
                   <button
                     onClick={handleLogout}
-                    className="p-2 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-full transition-colors cursor-pointer"
+                    title="Sign Out"
+                    className="p-2 text-slate-400 hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/40 rounded-full transition-colors cursor-pointer"
                   >
                     <LogOut className="w-4 h-4" />
                   </button>
@@ -349,14 +371,32 @@ const MainLayout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
                       </Link>
                     )}
                     <div className="mt-auto p-4 bg-slate-50 dark:bg-slate-800/80 rounded-xl flex items-center justify-between border border-slate-100 dark:border-slate-700/60">
-                      <div>
-                        <div className="text-sm font-bold text-slate-800 dark:text-slate-100">{user.name}</div>
-                        <div className="text-[10px] text-slate-400 dark:text-slate-400 uppercase font-bold">
-                          {user.role}
+                      <button
+                        onClick={() => {
+                          setMobileMenuOpen(false);
+                          setProfileModalOpen(true);
+                        }}
+                        className="flex items-center gap-3 text-left cursor-pointer flex-1 min-w-0"
+                      >
+                        <div className="w-10 h-10 rounded-full overflow-hidden bg-primary-100 dark:bg-primary-950/60 border border-primary-500/40 flex items-center justify-center shrink-0">
+                          {user.avatar ? (
+                            <img src={user.avatar} alt={user.name} className="w-full h-full object-cover" />
+                          ) : (
+                            <span className="text-sm font-black text-primary-600 dark:text-primary-400">
+                              {(user.name || user.email || 'U')[0].toUpperCase()}
+                            </span>
+                          )}
                         </div>
-                      </div>
+                        <div className="min-w-0 flex-1">
+                          <div className="text-sm font-bold text-slate-800 dark:text-slate-100 truncate">{user.name}</div>
+                          <div className="text-[10px] text-slate-400 dark:text-slate-400 uppercase font-bold truncate">
+                            @{user.username || user.email.split('@')[0]} • {user.role}
+                          </div>
+                        </div>
+                      </button>
                       <button
                         onClick={handleLogout}
+                        title="Sign Out"
                         className="text-rose-600 dark:text-rose-400 p-2 rounded-full hover:bg-rose-50 dark:hover:bg-rose-950/40 transition-colors cursor-pointer"
                       >
                         <LogOut className="w-5 h-5" />
@@ -762,6 +802,12 @@ const MainLayout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
           </div>
         )}
       </AnimatePresence>
+
+      {/* User Profile & Account Settings Modal */}
+      <UserProfileModal
+        isOpen={profileModalOpen}
+        onClose={() => setProfileModalOpen(false)}
+      />
     </div>
   );
 };
