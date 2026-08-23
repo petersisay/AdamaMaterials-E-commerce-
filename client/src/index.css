@@ -3,6 +3,8 @@
 
 @import "tailwindcss";
 
+@custom-variant dark (&:where(.dark, .dark *));
+
 @theme {
   /* Primary palette — deep indigo */
   --color-primary-50: oklch(0.97 0.01 270);
@@ -31,17 +33,32 @@
   --font-sans: 'Inter', system-ui, -apple-system, sans-serif;
 }
 
+:root {
+  color-scheme: light;
+}
+
+:root.dark,
+html.dark {
+  color-scheme: dark;
+}
 
 @layer base {
   body {
-    background-color: var(--color-slate-50, #f8fafc);
-    color: var(--color-slate-900, #0f172a);
+    background-color: #f8fafc;
+    color: #0f172a;
     font-family: var(--font-sans);
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
     min-height: 100vh;
     display: flex;
     flex-direction: column;
+    transition: background-color 0.2s ease, color 0.2s ease;
+  }
+
+  html.dark body,
+  :root.dark body {
+    background-color: #030712;
+    color: #f8fafc;
   }
 
   #root {

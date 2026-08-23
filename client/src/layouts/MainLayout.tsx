@@ -274,13 +274,17 @@ const MainLayout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
             )}
           </div>
 
-          {/* Mobile hamburger button */}
-          <button
-            onClick={() => setMobileMenuOpen(true)}
-            className="md:hidden p-2.5 rounded-xl hover:bg-slate-100 text-slate-700 transition-colors"
-          >
-            <Menu className="w-7 h-7" />
-          </button>
+          {/* Mobile header actions (Compact theme toggle + hamburger) */}
+          <div className="flex md:hidden items-center gap-1.5">
+            <ThemeToggle compact={true} />
+            <button
+              onClick={() => setMobileMenuOpen(true)}
+              className="p-2 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-200 transition-colors cursor-pointer"
+              aria-label="Open mobile navigation menu"
+            >
+              <Menu className="w-6 h-6" />
+            </button>
+          </div>
         </div>
       </header>
 

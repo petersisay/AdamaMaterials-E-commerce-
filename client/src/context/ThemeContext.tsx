@@ -37,15 +37,19 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 
       if (isDark) {
         root.classList.add('dark');
+        root.setAttribute('data-theme', 'dark');
         setResolvedTheme('dark');
       } else {
         root.classList.remove('dark');
+        root.setAttribute('data-theme', 'light');
         setResolvedTheme('light');
       }
     };
 
     applyTheme();
-    localStorage.setItem(STORAGE_KEY, theme);
+    try {
+      localStorage.setItem(STORAGE_KEY, theme);
+    } catch (_) {}
 
     if (theme === 'system' && window.matchMedia) {
       const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
