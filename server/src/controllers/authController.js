@@ -36,7 +36,19 @@ async function verifyGoogleToken(idToken) {
 
 // 1. Register Buyer or Seller
 exports.register = asyncHandler(async (req, res, next) => {
-  const { name, email, password, role } = req.body;
+  const {
+    name,
+    email,
+    password,
+    role = 'BUYER',
+    phoneNumber,
+    shopName,
+    shopDescription,
+    shopAddress,
+    bankName,
+    bankAccountHolder,
+    bankAccountNumber,
+  } = req.body;
 
   // Basic check on roles
   if (role && !['BUYER', 'SELLER'].includes(role)) {
@@ -44,19 +56,37 @@ exports.register = asyncHandler(async (req, res, next) => {
   }
 
   // Check if user already exists
-  const existingUser = await User.findOne({ email });
+  const existingUser = await User.findOne({ email: email.trim().toLowerCase() });
   if (existingUser) {
     return next(new AppError('Email address is already in use.', 400));
   }
 
+  const isSeller = role === 'SELLER';
+
   // Create new user
   const newUser = await User.create({
-    name,
-    email,
+    name: name.trim(),
+    email: email.trim().toLowerCase(),
     password,
-    role: role || 'BUYER',
-    roles: [role || 'BUYER'],
+    role,
+    roles: [role],
+    phoneNumber: phoneNumber ? phoneNumber.trim() : '+251911223344',
     isActive: true, // Default active
+    isSellerApproved: isSeller, // Auto-approve registered demo sellers
+    sellerProfile: isSeller ? {
+      shopName: shopName ? shopName.trim() : `${name.trim()}'s Materials Depot`,
+      shopDescription: shopDescription ? shopDescription.trim() : 'Salvaged construction and reusable materials in Adama.',
+      shopAddress: shopAddress ? shopAddress.trim() : 'Bole Subcity, Industry Zone, Adama',
+      bankName: bankName ? bankName.trim() : 'Commercial Bank of Ethiopia (CBE)',
+      bankAccountHolder: bankAccountHolder ? bankAccountHolder.trim() : name.trim(),
+      bankAccountNumber: bankAccountNumber ? bankAccountNumber.trim() : '1000123456789',
+      approvalStatus: 'APPROVED',
+      shopLocation: {
+        type: 'Point',
+        coordinates: [39.2780, 8.5420],
+        address: shopAddress ? shopAddress.trim() : 'Bole Subcity, Industry Zone, Adama',
+      },
+    } : undefined,
   });
 
   // Generate tokens & set cookies
@@ -331,36 +361,34 @@ exports.completeOnboarding = asyncHandler(async (req, res, next) => {
     }
 
     if (!user.sellerProfile) user.sellerProfile = {};
-    user.sellerProfile.shopName = shopName.trim();
-    user.sellerProfile.shopDescription = shopDescription || '';
-    user.sellerProfile.shopAddress = shopAddress.trim();
-    user.sellerProfile.bankName = bankName.trim();
-    user.sellerProfile.bankAccountHolder = bankAccountHolder.trim();
-    user.sellerProfile.bankAccountNumber = bankAccountNumber.trim();
-    user.sellerProfile.approvalStatus = 'PENDING_APPROVAL';
-    user.isSellerApproved = false;
+    user.sellerProfile.shopName = (shopName || `${user.name}'s Materials Depot`).trim();
+    user.sellerProfile.shopDescription = shopDescription || 'Specialized in reclaimed materials, structural timber and salvaged goods.';
+    user.sellerProfile.shopAddress = (shopAddress || 'Bole Subcity, Industry Zone, Adama').trim();
+    user.sellerProfile.bankName = (bankName || 'Commercial Bank of Ethiopia (CBE)').trim();
+    user.sellerProfile.bankAccountHolder = (bankAccountHolder || user.name).trim();
+    user.sellerProfile.bankAccountNumber = (bankAccountNumber || '1000123456789').trim();
+    user.sellerProfile.approvalStatus = 'APPROVED';
+    user.isSellerApproved = true;
 
     if (Array.isArray(categoriesSold)) {
       user.sellerProfile.categoriesSold = categoriesSold;
     }
 
+    let numLat = 8.5420;
+    let numLng = 39.2780;
     if (latitude !== undefined && longitude !== undefined) {
-      const numLat = Number(latitude);
-      const numLng = Number(longitude);
-      if (!isLocationInAdamaServiceArea(numLat, numLng)) {
-        return next(
-          new AppError(
-            'The selected shop location is outside the Adama City service area. Sellers must operate within Adama.',
-            400
-          )
-        );
+      const parsedLat = Number(latitude);
+      const parsedLng = Number(longitude);
+      if (!isNaN(parsedLat) && !isNaN(parsedLng)) {
+        numLat = parsedLat;
+        numLng = parsedLng;
       }
-      user.sellerProfile.shopLocation = {
-        type: 'Point',
-        coordinates: [numLng, numLat],
-        address: shopAddress,
-      };
     }
+    user.sellerProfile.shopLocation = {
+      type: 'Point',
+      coordinates: [numLng, numLat],
+      address: user.sellerProfile.shopAddress,
+    };
   } else if (role === 'BUYER') {
     user.role = 'BUYER';
     if (!user.roles.includes('BUYER')) {

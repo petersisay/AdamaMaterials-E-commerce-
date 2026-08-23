@@ -189,6 +189,30 @@ const DEMO_MAP_PLACES = [
     isVerified: true,
     isActive: true,
   },
+  {
+    name: 'Posta Bet Reclaimed Hardware Spot [Community]',
+    category: 'Community Salvage Spot',
+    materials: ['Fasteners', 'Hardware Tools', 'Pipes', 'Fittings'],
+    description: 'Public community drop-off and exchange point for residential hardware and scrap materials.',
+    address: 'Post Office Square, Kebele 02, Adama',
+    phone: '+251221118811',
+    coordinates: [39.2720, 8.5490],
+    source: 'OSM_EXTERNAL',
+    isVerified: true,
+    isActive: true,
+  },
+  {
+    name: 'Adama Stadium Community Scrap Spot [Community]',
+    category: 'Community Salvage Spot',
+    materials: ['Plastics', 'Small Metals', 'Appliances', 'Fixtures'],
+    description: 'Local neighborhood exchange and collection hub for reusable scrap goods and fixtures.',
+    address: 'Stadium Gate 2, Kebele 06, Adama',
+    phone: '+251221119922',
+    coordinates: [39.2630, 8.5390],
+    source: 'OSM_EXTERNAL',
+    isVerified: true,
+    isActive: true,
+  },
 ];
 
 /**

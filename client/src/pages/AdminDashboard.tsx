@@ -762,17 +762,19 @@ const AdminDashboard: React.FC = () => {
                       </div>
                     </div>
                   ) : (
-                    <div className="flex gap-2 pt-2 border-t border-slate-100">
+                    <div className="flex gap-2.5 pt-3 border-t border-slate-100">
                       <button
                         onClick={() => handleProductReview(p._id, 'APPROVED')}
-                        className="flex-1 bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-2 rounded-xl text-xs shadow-sm cursor-pointer"
+                        className="flex-1 bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold py-2.5 px-4 rounded-xl text-sm shadow-sm cursor-pointer whitespace-nowrap min-w-[130px] flex items-center justify-center gap-1.5 transition-all"
                       >
+                        <CheckCircle2 className="w-4 h-4" />
                         Approve Product
                       </button>
                       <button
                         onClick={() => setRejectionProductId(p._id)}
-                        className="flex-1 border border-rose-200 hover:bg-rose-50 text-rose-600 font-bold py-2 rounded-xl text-xs cursor-pointer"
+                        className="flex-1 border border-rose-200 hover:bg-rose-50 text-rose-600 font-extrabold py-2.5 px-4 rounded-xl text-sm cursor-pointer whitespace-nowrap min-w-[100px] flex items-center justify-center gap-1.5 transition-all"
                       >
+                        <X className="w-4 h-4" />
                         Reject
                       </button>
                     </div>
@@ -1189,7 +1191,7 @@ const AdminDashboard: React.FC = () => {
                             {delivery.status}
                           </span>
                         </td>
-                        <td className="py-3.5 px-4 text-right">
+                        <td className="py-3.5 px-4 text-right whitespace-nowrap">
                           <select
                             value={delivery.status}
                             onChange={(e) => {
@@ -1199,7 +1201,7 @@ const AdminDashboard: React.FC = () => {
                                 handleUpdateDeliveryStatus(delivery._id, newStatus, note);
                               }
                             }}
-                            className="bg-slate-100 hover:bg-slate-200 border border-slate-300 text-slate-800 text-xs font-bold py-1.5 px-3 rounded-xl focus:outline-none cursor-pointer"
+                            className="bg-slate-100 hover:bg-slate-200 border border-slate-300 text-slate-900 text-xs sm:text-sm font-extrabold py-2 px-3.5 rounded-xl focus:outline-none cursor-pointer shadow-xs"
                           >
                             <option value="PENDING">PENDING</option>
                             <option value="ASSIGNED">ASSIGNED</option>
