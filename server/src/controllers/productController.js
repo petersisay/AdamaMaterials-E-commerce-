@@ -168,12 +168,23 @@ exports.getProductById = asyncHandler(async (req, res, next) => {
 
 // ================= SELLER PRODUCT CONTROLLERS =================
 
-// Create Product (defaults to DRAFT)
+// Create Product (defaults to DRAFT or APPROVED)
 exports.createProduct = asyncHandler(async (req, res, next) => {
   let { name, description, price, quantity, category, materialType, condition, location, images } = req.body;
 
-  if (!images || !Array.isArray(images) || images.length === 0) {
-    images = ['https://images.unsplash.com/photo-1541888946425-d0fbb18086f6?w=600&auto=format&fit=crop&q=80'];
+  if (!images || !Array.isArray(images) || images.filter(img => img && typeof img === 'string' && img.trim().length > 0).length === 0) {
+    const lower = (name || '').toLowerCase();
+    if (lower.includes('wood') || lower.includes('timber') || lower.includes('pallet') || lower.includes('plank')) {
+      images = ['https://images.unsplash.com/photo-1513694203232-719a280e022f?w=600&auto=format&fit=crop&q=80'];
+    } else if (lower.includes('metal') || lower.includes('steel') || lower.includes('iron') || lower.includes('pipe') || lower.includes('rebar')) {
+      images = ['https://images.unsplash.com/photo-1504917599217-d4dc5ebe6122?w=600&auto=format&fit=crop&q=80'];
+    } else if (lower.includes('electric') || lower.includes('wire') || lower.includes('cable') || lower.includes('circuit')) {
+      images = ['https://images.unsplash.com/photo-1518770660439-4636190af475?w=600&auto=format&fit=crop&q=80'];
+    } else if (lower.includes('plastic') || lower.includes('barrel') || lower.includes('tank') || lower.includes('crate')) {
+      images = ['https://images.unsplash.com/photo-1584473457406-6240486418e9?w=600&auto=format&fit=crop&q=80'];
+    } else {
+      images = ['https://images.unsplash.com/photo-1541888946425-d0fbb18086f6?w=600&auto=format&fit=crop&q=80'];
+    }
   }
 
   const validConditions = ['New', 'Like New', 'Good', 'Fair', 'Used', 'Salvaged'];
@@ -303,6 +314,7 @@ exports.uploadImages = asyncHandler(async (req, res, next) => {
     success: true,
     message: `${imageUrls.length} images uploaded successfully.`,
     urls: imageUrls,
+    images: imageUrls,
   });
 });
 
