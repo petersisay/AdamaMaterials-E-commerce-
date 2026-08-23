@@ -179,7 +179,21 @@ exports.login = asyncHandler(async (req, res, next) => {
 
 // 2b. Google Sign-In / OAuth
 exports.googleAuth = asyncHandler(async (req, res, next) => {
-  const { credential, accessToken, email: directEmail, name: directName, googleId: directGoogleId, avatar: directAvatar } = req.body;
+  const {
+    credential,
+    accessToken,
+    email: directEmail,
+    name: directName,
+    googleId: directGoogleId,
+    avatar: directAvatar,
+    role: requestedRole,
+    shopName,
+    shopAddress,
+    shopDescription,
+    bankName,
+    bankAccountNumber,
+    bankAccountHolder,
+  } = req.body;
 
   let payload = null;
 
@@ -219,6 +233,7 @@ exports.googleAuth = asyncHandler(async (req, res, next) => {
   const name = payload.name || payload.given_name || directName || 'Google User';
   const googleId = payload.sub || payload.id || directGoogleId || `google-${Date.now()}`;
   const avatar = payload.picture || directAvatar || '';
+  const isSellerRole = requestedRole === 'SELLER';
 
   // Safe Account Linking: Look up by googleId first, then by verified email
   let user = await User.findOne({ $or: [{ googleId }, { email }] });
@@ -231,6 +246,27 @@ exports.googleAuth = asyncHandler(async (req, res, next) => {
     if (!user.avatar && avatar) {
       user.avatar = avatar;
     }
+    if (isSellerRole) {
+      user.role = 'SELLER';
+      if (!user.roles.includes('SELLER')) user.roles.push('SELLER');
+      user.isSellerApproved = true;
+      if (!user.sellerProfile) {
+        user.sellerProfile = {
+          shopName: shopName ? shopName.trim() : `${user.name}'s Materials Depot`,
+          shopDescription: shopDescription || 'Specialized in reclaimed materials, structural timber and salvaged goods.',
+          shopAddress: shopAddress ? shopAddress.trim() : 'Bole Subcity, Industry Zone, Adama',
+          bankName: bankName ? bankName.trim() : 'Commercial Bank of Ethiopia (CBE)',
+          bankAccountHolder: bankAccountHolder ? bankAccountHolder.trim() : user.name,
+          bankAccountNumber: bankAccountNumber ? bankAccountNumber.trim() : '1000123456789',
+          approvalStatus: 'APPROVED',
+          shopLocation: {
+            type: 'Point',
+            coordinates: [39.2780, 8.5420],
+            address: shopAddress ? shopAddress.trim() : 'Bole Subcity, Industry Zone, Adama',
+          },
+        };
+      }
+    }
     await user.save({ validateBeforeSave: false });
   } else {
     isNewUser = true;
@@ -239,9 +275,24 @@ exports.googleAuth = asyncHandler(async (req, res, next) => {
       email,
       googleId,
       avatar,
-      role: 'BUYER',
-      roles: ['BUYER'],
+      role: isSellerRole ? 'SELLER' : 'BUYER',
+      roles: isSellerRole ? ['SELLER', 'BUYER'] : ['BUYER'],
       isActive: true,
+      isSellerApproved: isSellerRole,
+      sellerProfile: isSellerRole ? {
+        shopName: shopName ? shopName.trim() : `${name}'s Materials Depot`,
+        shopDescription: shopDescription || 'Specialized in reclaimed materials, structural timber and salvaged goods.',
+        shopAddress: shopAddress ? shopAddress.trim() : 'Bole Subcity, Industry Zone, Adama',
+        bankName: bankName ? bankName.trim() : 'Commercial Bank of Ethiopia (CBE)',
+        bankAccountHolder: bankAccountHolder ? bankAccountHolder.trim() : name,
+        bankAccountNumber: bankAccountNumber ? bankAccountNumber.trim() : '1000123456789',
+        approvalStatus: 'APPROVED',
+        shopLocation: {
+          type: 'Point',
+          coordinates: [39.2780, 8.5420],
+          address: shopAddress ? shopAddress.trim() : 'Bole Subcity, Industry Zone, Adama',
+        },
+      } : undefined,
     });
   }
 
@@ -255,7 +306,7 @@ exports.googleAuth = asyncHandler(async (req, res, next) => {
 
   user.password = undefined;
 
-  const needsRoleSelection = isNewUser || (!user.phoneNumber && user.role === 'BUYER');
+  const needsRoleSelection = isNewUser && !isSellerRole;
 
   res.status(200).json({
     success: true,

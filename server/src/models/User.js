@@ -122,8 +122,7 @@ const userSchema = new mongoose.Schema(
       },
       categoriesSold: [
         {
-          type: mongoose.Schema.Types.ObjectId,
-          ref: 'Category',
+          type: mongoose.Schema.Types.Mixed,
         },
       ],
       shopLocation: {
