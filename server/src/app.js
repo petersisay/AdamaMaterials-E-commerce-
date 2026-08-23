@@ -11,7 +11,8 @@ const AppError = require('./utils/appError');
 const app = express();
 app.set('trust proxy', 1); // Trust first proxy (for rate limiting and secure cookies)
 
-app.use(express.json());
+app.use(express.json({ limit: '25mb' }));
+app.use(express.urlencoded({ extended: true, limit: '25mb' }));
 
 // HTTP Response Compression (Gzip/Brotli) for high speed
 app.use(compression());

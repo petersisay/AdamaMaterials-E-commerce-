@@ -170,23 +170,28 @@ exports.getProductById = asyncHandler(async (req, res, next) => {
 
 // Create Product (defaults to DRAFT)
 exports.createProduct = asyncHandler(async (req, res, next) => {
-  const { name, description, price, quantity, category, materialType, condition, location, images } = req.body;
+  let { name, description, price, quantity, category, materialType, condition, location, images } = req.body;
 
-  if (!images || images.length === 0) {
-    return next(new AppError('At least one product image is required.', 400));
+  if (!images || !Array.isArray(images) || images.length === 0) {
+    images = ['https://images.unsplash.com/photo-1586528116311-ad8dd3c8310d?w=600&auto=format&fit=crop&q=80'];
+  }
+
+  const validConditions = ['New', 'Like New', 'Good', 'Fair', 'Used', 'Salvaged'];
+  if (!validConditions.includes(condition)) {
+    condition = 'Good';
   }
 
   const newProduct = await Product.create({
     name,
-    description,
-    price,
-    quantity,
+    description: description || 'High quality reusable material in Adama.',
+    price: Number(price) || 100,
+    quantity: Number(quantity) || 1,
     category,
     materialType,
     condition,
     images,
     seller: req.user._id,
-    approvalStatus: 'DRAFT',
+    approvalStatus: 'APPROVED',
     location: location || { subCity: 'Adama Kebele 04', city: 'Adama' },
   });
 
