@@ -1,3 +1,4 @@
+const mongoose = require('mongoose');
 const Order = require('../models/Order');
 const Product = require('../models/Product');
 const Cart = require('../models/Cart');
@@ -291,6 +292,7 @@ exports.getMyOrders = asyncHandler(async (req, res, next) => {
     success: true,
     count: filteredOrders.length,
     orders: filteredOrders,
+    data: filteredOrders,
   });
 });
 
@@ -450,5 +452,47 @@ exports.estimateDeliveryFee = asyncHandler(async (req, res, next) => {
   res.status(200).json({
     success: true,
     ...result,
+  });
+});
+
+// 7. Get Order Tracking (Live Tracking with Adama Bounds & Steps)
+exports.getOrderTracking = asyncHandler(async (req, res, next) => {
+  const { id } = req.params;
+  const isMongoId = mongoose.Types.ObjectId.isValid(id);
+  const order = await Order.findOne(isMongoId ? { _id: id } : { trackingNumber: id })
+    .populate('buyer', 'name phoneNumber email')
+    .populate('items.product', 'name price images')
+    .populate('items.seller', 'name sellerProfile');
+
+  if (!order) {
+    return next(new AppError('Order not found.', 404));
+  }
+
+  const trackingSteps = [
+    { key: 'PENDING_PAYMENT', label: 'Order Placed', completed: true, timestamp: order.createdAt },
+    { key: 'CONFIRMED', label: 'Confirmed & Paid', completed: ['CONFIRMED', 'PREPARING', 'IN_TRANSIT', 'DELIVERED', 'COMPLETED'].includes(order.orderStatus), timestamp: order.updatedAt },
+    { key: 'PREPARING', label: 'Dispatched to Hub', completed: ['PREPARING', 'IN_TRANSIT', 'DELIVERED', 'COMPLETED'].includes(order.orderStatus) },
+    { key: 'IN_TRANSIT', label: 'Out for Delivery (Adama Service Area)', completed: ['IN_TRANSIT', 'DELIVERED', 'COMPLETED'].includes(order.orderStatus) },
+    { key: 'DELIVERED', label: 'Delivered', completed: ['DELIVERED', 'COMPLETED'].includes(order.orderStatus) },
+  ];
+
+  res.status(200).json({
+    success: true,
+    trackingNumber: order.trackingNumber,
+    orderStatus: order.orderStatus,
+    deliveryStatus: order.deliveryStatus,
+    deliveryAddress: order.deliveryAddress,
+    deliveryLocation: order.deliveryLocation,
+    trackingSteps,
+    tracking: {
+      trackingNumber: order.trackingNumber,
+      orderStatus: order.orderStatus,
+      deliveryStatus: order.deliveryStatus,
+      deliveryAddress: order.deliveryAddress,
+      deliveryLocation: order.deliveryLocation,
+      trackingSteps,
+    },
+    order,
+    data: order,
   });
 });

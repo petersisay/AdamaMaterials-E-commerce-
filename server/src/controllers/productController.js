@@ -166,6 +166,30 @@ exports.getProductById = asyncHandler(async (req, res, next) => {
   });
 });
 
+// Get Map Locations (Public Geocoded Supply Points across Adama)
+exports.getMapLocations = asyncHandler(async (req, res, next) => {
+  const products = await Product.find({ approvalStatus: 'APPROVED' })
+    .populate('seller', 'name sellerProfile')
+    .populate('category', 'name slug')
+    .select('name price condition images location seller category');
+
+  const adamaHubs = [
+    { name: 'Adama Central Materials Depot', address: 'Kebele 04 Central Zone, Adama', coordinates: [39.2700, 8.5400], type: 'HUB' },
+    { name: 'Bole Subcity Reclaimed Timber Yard', address: 'Bole Industrial Park, Adama', coordinates: [39.2780, 8.5420], type: 'SELLER' },
+    { name: 'Geda Metals & Salvage Hub', address: 'Geda Subcity, Main Highway, Adama', coordinates: [39.2850, 8.5510], type: 'SELLER' },
+    { name: 'Daka Construction Scrap Center', address: 'Daka Kebele 08, Adama', coordinates: [39.2610, 8.5320], type: 'SELLER' },
+  ];
+
+  res.status(200).json({
+    success: true,
+    count: products.length,
+    locations: products,
+    products,
+    hubs: adamaHubs,
+    data: products,
+  });
+});
+
 // ================= SELLER PRODUCT CONTROLLERS =================
 
 // Create Product (defaults to DRAFT or APPROVED)

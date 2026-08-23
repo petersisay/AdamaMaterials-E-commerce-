@@ -12,6 +12,9 @@ router.post('/estimate-delivery-fee', orderController.estimateDeliveryFee);
 router.post('/checkout', protect, restrictTo('BUYER'), orderController.checkout);
 
 // Common order retrieval routes
+router.get('/my-orders', protect, orderController.getMyOrders);
+router.get('/track/:id', protect, orderController.getOrderTracking);
+router.get('/:id/track', protect, orderController.getOrderTracking);
 router.get('/', protect, orderController.getMyOrders);
 router.get('/:id', protect, orderController.getOrderDetails);
 

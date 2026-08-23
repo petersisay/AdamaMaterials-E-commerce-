@@ -1,4 +1,5 @@
 const crypto = require('crypto');
+const mongoose = require('mongoose');
 const Payment = require('../models/Payment');
 const Order = require('../models/Order');
 const Product = require('../models/Product');
@@ -693,14 +694,28 @@ exports.verifyPaymentManual = asyncHandler(async (req, res, next) => {
 // 3. Online Payment Verification (API trigger for frontend callback)
 // ─────────────────────────────────────────────────────────────────────────────
 exports.verifyOnlinePayment = asyncHandler(async (req, res, next) => {
-  const { transactionId, provider } = req.query;
+  let transactionId = req.query.transactionId || req.query.tx_ref || req.query.txRef || req.params.txRef || req.params.transactionId;
+  let provider = req.query.provider || req.query.gateway;
+  const orderParam = req.params.orderId || req.params.id || req.query.orderId;
 
-  if (!transactionId || !provider) {
-    return next(new AppError('Transaction reference and provider name are required.', 400));
+  let payment = null;
+  if (transactionId) {
+    payment = await Payment.findOne({ transactionId });
+  }
+  if (!payment && orderParam && mongoose.Types.ObjectId.isValid(orderParam)) {
+    payment = await Payment.findOne({ order: orderParam }).sort({ createdAt: -1 });
   }
 
-  const payment = await Payment.findOne({ transactionId });
-  if (!payment) return next(new AppError('Payment transaction reference not found.', 404));
+  if (!payment) {
+    return next(new AppError('Payment transaction or order reference not found.', 404));
+  }
+
+  provider = (provider || payment.provider || 'CHAPA').toUpperCase();
+  transactionId = transactionId || payment.transactionId;
+
+  if (!transactionId) {
+    return next(new AppError('Transaction reference not found for this payment.', 400));
+  }
 
   // Idempotency
   if (payment.status === 'PAID') {
@@ -711,7 +726,7 @@ exports.verifyOnlinePayment = asyncHandler(async (req, res, next) => {
   const order = await Order.findById(payment.order);
   if (!order) return next(new AppError('Associated order not found.', 404));
 
-  const result = await PaymentService.verify(transactionId, provider.toUpperCase());
+  const result = await PaymentService.verify(transactionId, provider);
 
   if (result.status === 'PAID') {
     // Amount mismatch guard

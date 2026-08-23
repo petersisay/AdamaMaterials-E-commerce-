@@ -58,6 +58,8 @@ router.get(
 );
 
 // Frontend callback after online payment gateway redirect
+router.get('/verify-online/:orderId', paymentController.verifyOnlinePayment);
 router.get('/verify-online', paymentController.verifyOnlinePayment);
+router.get('/verify/:txRef', paymentController.verifyOnlinePayment);
 
 module.exports = router;

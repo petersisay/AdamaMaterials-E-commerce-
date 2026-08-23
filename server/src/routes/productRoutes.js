@@ -22,6 +22,7 @@ const upload = multer({
 const router = express.Router();
 
 // Public routes
+router.get('/map-locations', productController.getMapLocations);
 router.get('/', productController.getPublicProducts);
 router.get('/:id', productController.getProductDetails);
 
