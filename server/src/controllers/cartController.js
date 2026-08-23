@@ -99,6 +99,7 @@ exports.addToCart = asyncHandler(async (req, res, next) => {
       items: populatedCart.items,
       subtotal,
     },
+    data: populatedCart,
   });
 });
 

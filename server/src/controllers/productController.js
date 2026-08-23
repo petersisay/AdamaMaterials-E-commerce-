@@ -170,7 +170,41 @@ exports.getProductById = asyncHandler(async (req, res, next) => {
 
 // Create Product (defaults to DRAFT or APPROVED)
 exports.createProduct = asyncHandler(async (req, res, next) => {
-  let { name, description, price, quantity, category, materialType, condition, location, images } = req.body;
+  let { name, title, description, price, quantity, category, materialType, condition, location, images } = req.body;
+  name = name || title || 'Reclaimed Material';
+
+  // Category resolution
+  if (!category || !mongoose.Types.ObjectId.isValid(category)) {
+    let catDoc = null;
+    if (category && typeof category === 'string') {
+      catDoc = await Category.findOne({ $or: [{ slug: category.toLowerCase() }, { name: new RegExp(category, 'i') }] });
+    }
+    if (!catDoc) {
+      catDoc = await Category.findOne({});
+    }
+    if (!catDoc) {
+      catDoc = await Category.create({ name: 'General Materials', slug: 'general-materials', description: 'General building and salvaged materials' });
+    }
+    category = catDoc._id;
+  }
+
+  // MaterialType resolution
+  if (!materialType || !mongoose.Types.ObjectId.isValid(materialType)) {
+    let matDoc = null;
+    if (materialType && typeof materialType === 'string') {
+      matDoc = await MaterialType.findOne({ $or: [{ slug: materialType.toLowerCase() }, { name: new RegExp(materialType, 'i') }] });
+    }
+    if (!matDoc) {
+      matDoc = await MaterialType.findOne({ category });
+    }
+    if (!matDoc) {
+      matDoc = await MaterialType.findOne({});
+    }
+    if (!matDoc) {
+      matDoc = await MaterialType.create({ name: 'Standard Reusable', slug: 'standard-reusable', category, description: 'Standard recyclable and reusable material' });
+    }
+    materialType = matDoc._id;
+  }
 
   if (!images || !Array.isArray(images) || images.filter(img => img && typeof img === 'string' && img.trim().length > 0).length === 0) {
     const lower = (name || '').toLowerCase();
@@ -209,6 +243,7 @@ exports.createProduct = asyncHandler(async (req, res, next) => {
   res.status(201).json({
     success: true,
     product: newProduct,
+    data: newProduct,
   });
 });
 

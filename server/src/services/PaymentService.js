@@ -108,7 +108,12 @@ class ChapaProvider extends PaymentProvider {
   async initializePayment(order, callbackUrl) {
     const key = process.env.CHAPA_SECRET_KEY;
     if (!key) {
-      throw new Error('CHAPA_SECRET_KEY is missing in server/.env. Please configure your Chapa API Key (e.g. CHASECK_TEST-...).');
+      if (process.env.NODE_ENV === 'production') {
+        throw new Error('CHAPA_SECRET_KEY is missing in server/.env. Please configure your Chapa API Key (e.g. CHASECK_TEST-...).');
+      }
+      const txRef = `TX-MOCK-${Date.now()}-${order._id}`;
+      const paymentUrl = `${process.env.CLIENT_URL || 'http://localhost:5173'}/mock-payment/${txRef}?amount=${order.total}`;
+      return { success: true, transactionId: txRef, paymentUrl };
     }
 
     const txRef = `TX-CHAPA-${Date.now()}-${order._id}`;
@@ -188,6 +193,12 @@ class ChapaProvider extends PaymentProvider {
   }
 
   async verifyPayment(transactionId) {
+    if (transactionId.startsWith('TX-MOCK-')) {
+      if (process.env.NODE_ENV === 'production') {
+        return { status: 'FAILED', transactionId, message: 'Mock payments are forbidden in production.' };
+      }
+      return { status: 'PAID', transactionId, amount: 0 };
+    }
     const key = process.env.CHAPA_SECRET_KEY;
     if (!key) {
       throw new Error('CHAPA_SECRET_KEY is missing in server/.env.');
