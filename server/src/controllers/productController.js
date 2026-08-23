@@ -173,7 +173,7 @@ exports.createProduct = asyncHandler(async (req, res, next) => {
   let { name, description, price, quantity, category, materialType, condition, location, images } = req.body;
 
   if (!images || !Array.isArray(images) || images.length === 0) {
-    images = ['https://images.unsplash.com/photo-1586528116311-ad8dd3c8310d?w=600&auto=format&fit=crop&q=80'];
+    images = ['https://images.unsplash.com/photo-1541888946425-d0fbb18086f6?w=600&auto=format&fit=crop&q=80'];
   }
 
   const validConditions = ['New', 'Like New', 'Good', 'Fair', 'Used', 'Salvaged'];

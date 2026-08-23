@@ -1000,7 +1000,7 @@ const seedData = async (isImported = false) => {
         materialType: metalMat._id,
         condition: 'Fair',
         images: [
-          'https://images.unsplash.com/photo-1504307651254-35680f356dfd?w=600&auto=format&fit=crop&q=80',
+          'https://images.unsplash.com/photo-1513694203232-719a280e022f?w=600&auto=format&fit=crop&q=80',
         ],
         seller: seller3._id,
         approvalStatus: 'APPROVED',
@@ -1227,11 +1227,11 @@ const seedData = async (isImported = false) => {
         },
       },
 
-      // ── Other Usable Secondary Materials ──
+      // ── Other Usable Secondary Materials & Construction Salvage ──
       {
         name: 'Used Commercial Microwave Oven (LG 30L Stainless Steel)',
         description:
-          'Heavy-duty microwave oven with digital keypad. Clean stainless cavity, tested and heats food quickly.',
+          'Heavy-duty microwave oven with digital keypad. Clean stainless cavity, tested and heats quickly.',
         price: 3400,
         quantity: 1,
         category: kitchenCat._id,
@@ -1244,6 +1244,82 @@ const seedData = async (isImported = false) => {
         approvalStatus: 'APPROVED',
         location: {
           subCity: 'Bole',
+          city: 'Adama',
+        },
+      },
+      {
+        name: 'Reclaimed Construction Hardwood Timber Beams & Joists',
+        description:
+          'Dry seasoned eucalyptus and cypress construction lumber (4x4 and 2x4 beams). Stored dry, perfect for structural formwork or framing.',
+        price: 3100,
+        quantity: 6,
+        category: furnitureCat._id,
+        materialType: woodMat._id,
+        condition: 'Good',
+        images: [
+          'https://images.unsplash.com/photo-1546484396-fb3fc6f95f98?w=600&auto=format&fit=crop&q=80',
+        ],
+        seller: seller5._id,
+        approvalStatus: 'APPROVED',
+        location: {
+          subCity: 'Melka Hida',
+          city: 'Adama',
+        },
+      },
+      {
+        name: 'Cleaned Demolition Red Clay Bricks (Pack of 150 Pcs)',
+        description:
+          'Solid kiln-fired red clay bricks salvaged from building renovation. Cleaned of old mortar, stacked on wooden pallets in Adama.',
+        price: 1800,
+        quantity: 8,
+        category: toolsCat._id,
+        materialType: mixedMat._id,
+        condition: 'Good',
+        images: [
+          'https://images.unsplash.com/photo-1590069261209-f8e9b8642343?w=600&auto=format&fit=crop&q=80',
+        ],
+        seller: seller3._id,
+        approvalStatus: 'APPROVED',
+        location: {
+          subCity: 'Kebele 02',
+          city: 'Adama',
+        },
+      },
+      {
+        name: 'Salvaged Heavy Duty Aluminum Window Frames & Profiles',
+        description:
+          'Extruded bronze-anodized aluminum frame sections with intact rubber gaskets. Great for scrap recycling or workshop partitions.',
+        price: 2600,
+        quantity: 4,
+        category: toolsCat._id,
+        materialType: metalMat._id,
+        condition: 'Good',
+        images: [
+          'https://images.unsplash.com/photo-1509644851169-2acc08aa25b5?w=600&auto=format&fit=crop&q=80',
+        ],
+        seller: seller1._id,
+        approvalStatus: 'APPROVED',
+        location: {
+          subCity: 'Industry Zone',
+          city: 'Adama',
+        },
+      },
+      {
+        name: 'Heavy Scrap Vehicle Leaf Springs & Axles (Approx 70kg)',
+        description:
+          'High carbon spring steel leaf springs and solid forged axle shafts from heavy trucks. Ideal for blacksmithing and fabrication.',
+        price: 4600,
+        quantity: 2,
+        category: toolsCat._id,
+        materialType: metalMat._id,
+        condition: 'Used',
+        images: [
+          'https://images.unsplash.com/photo-1580273916550-e323be2ae537?w=600&auto=format&fit=crop&q=80',
+        ],
+        seller: seller6._id,
+        approvalStatus: 'APPROVED',
+        location: {
+          subCity: 'Boku',
           city: 'Adama',
         },
       },
