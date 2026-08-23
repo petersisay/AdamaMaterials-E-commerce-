@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useSearchParams, Link } from 'react-router-dom';
 import { Search, SlidersHorizontal, ChevronLeft, ChevronRight, RotateCcw } from 'lucide-react';
 import api from '../services/api';
+import { getMaterialFallbackImage } from '../utils/materialImages';
 
 const CatalogPage: React.FC = () => {
   const [searchParams, setSearchParams] = useSearchParams();
@@ -263,13 +264,13 @@ const CatalogPage: React.FC = () => {
                   >
                     <div className="aspect-square bg-slate-100 relative overflow-hidden">
                       <img
-                        src={p.images?.[0] || 'https://images.unsplash.com/photo-1595079676339-1534801ad6cf?w=600&auto=format&fit=crop&q=80'}
+                        src={p.images?.[0] || getMaterialFallbackImage(p.name, p.category?.name)}
                         alt={p.name}
                         className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                         onError={(e) => {
                           const target = e.currentTarget;
                           target.onerror = null;
-                          target.src = 'https://images.unsplash.com/photo-1595079676339-1534801ad6cf?w=600&auto=format&fit=crop&q=80';
+                          target.src = getMaterialFallbackImage(p.name, p.category?.name);
                         }}
                       />
                       <span className="absolute top-3 left-3 bg-white/95 text-slate-800 text-[10px] font-bold px-2 py-0.5 rounded-full border border-slate-100 uppercase tracking-wide">

@@ -4,6 +4,7 @@ import { motion } from 'framer-motion';
 import { ArrowRight, Search, ShieldCheck, Truck, Coins, BadgeAlert, Sparkles, CheckCircle2 } from 'lucide-react';
 import BrandLogo from '../components/BrandLogo';
 import api from '../services/api';
+import { getMaterialFallbackImage } from '../utils/materialImages';
 
 const LandingPage: React.FC = () => {
   const [featuredProducts, setFeaturedProducts] = useState<any[]>([]);
@@ -122,13 +123,13 @@ const LandingPage: React.FC = () => {
                 <div className="space-y-4">
                   <div className="aspect-video w-full rounded-xl bg-slate-850 overflow-hidden relative">
                     <img 
-                      src={featuredProducts[0]?.images?.[0] || 'https://images.unsplash.com/photo-1595079676339-1534801ad6cf?w=600&auto=format&fit=crop&q=80'} 
+                      src={featuredProducts[0]?.images?.[0] || getMaterialFallbackImage(featuredProducts[0]?.name, featuredProducts[0]?.category?.name)} 
                       alt={featuredProducts[0]?.name || 'Featured Material'} 
                       className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                       onError={(e) => {
                         const target = e.currentTarget;
                         target.onerror = null;
-                        target.src = 'https://images.unsplash.com/photo-1595079676339-1534801ad6cf?w=600&auto=format&fit=crop&q=80';
+                        target.src = getMaterialFallbackImage(featuredProducts[0]?.name, featuredProducts[0]?.category?.name);
                       }}
                     />
                   </div>
@@ -226,13 +227,13 @@ const LandingPage: React.FC = () => {
                 >
                   <div className="aspect-square bg-slate-100 relative overflow-hidden">
                     <img 
-                      src={product.images?.[0] || 'https://images.unsplash.com/photo-1595079676339-1534801ad6cf?w=600&auto=format&fit=crop&q=80'} 
+                      src={product.images?.[0] || getMaterialFallbackImage(product.name, product.materialType?.name || product.category?.name)} 
                       alt={product.name} 
                       className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                       onError={(e) => {
                         const target = e.currentTarget;
                         target.onerror = null;
-                        target.src = 'https://images.unsplash.com/photo-1595079676339-1534801ad6cf?w=600&auto=format&fit=crop&q=80';
+                        target.src = getMaterialFallbackImage(product.name, product.materialType?.name || product.category?.name);
                       }}
                     />
                     <span className="absolute top-3 left-3 bg-white/95 text-slate-800 text-[10px] font-bold px-2 py-0.5 rounded-full border border-slate-100 uppercase tracking-wide">
