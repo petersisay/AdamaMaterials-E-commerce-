@@ -19,6 +19,7 @@ import {
   Lock,
 } from 'lucide-react';
 import BrandLogo from '../components/BrandLogo';
+import ThemeToggle from '../components/ThemeToggle';
 import api from '../services/api';
 
 const MainLayout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
@@ -91,9 +92,9 @@ const MainLayout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   };
 
   return (
-    <div className="min-h-screen flex flex-col bg-slate-50 text-slate-900">
+    <div className="min-h-screen flex flex-col bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 transition-colors duration-200">
       {/* Header */}
-      <header className="sticky top-0 z-50 w-full bg-white/95 border-b border-slate-200 backdrop-blur-md shadow-xs relative">
+      <header className="sticky top-0 z-50 w-full bg-white/95 dark:bg-slate-900/95 border-b border-slate-200 dark:border-slate-800 backdrop-blur-md shadow-xs relative">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-20 sm:h-22 flex items-center justify-between">
           {/* Logo */}
           <Link to="/" className="group py-1">
@@ -105,21 +106,21 @@ const MainLayout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
             {(!user || user.role === 'BUYER' || user.role === 'SELLER') && (
               <Link
                 to="/products"
-                className="text-sm font-semibold text-slate-700 hover:text-primary-600 transition-colors"
+                className="text-sm font-semibold text-slate-700 dark:text-slate-300 hover:text-primary-600 dark:hover:text-primary-400 transition-colors"
               >
                 Catalog
               </Link>
             )}
             <Link
               to="/map"
-              className="text-sm font-semibold text-slate-700 hover:text-primary-600 transition-colors flex items-center gap-1.5"
+              className="text-sm font-semibold text-slate-700 dark:text-slate-300 hover:text-primary-600 dark:hover:text-primary-400 transition-colors flex items-center gap-1.5"
             >
               <MapPin className="w-4 h-4 text-emerald-600" />
               Marketplace Map
             </Link>
             <button
               onClick={() => setActivePolicy('ABOUT')}
-              className="text-sm font-semibold text-slate-700 hover:text-primary-600 transition-colors flex items-center gap-1.5 cursor-pointer"
+              className="text-sm font-semibold text-slate-700 dark:text-slate-300 hover:text-primary-600 dark:hover:text-primary-400 transition-colors flex items-center gap-1.5 cursor-pointer"
             >
               <Store className="w-4 h-4 text-orange-500" />
               About Revola
@@ -127,7 +128,7 @@ const MainLayout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
             {user && (
               <Link
                 to={getDashboardLink()}
-                className="text-sm font-semibold text-slate-700 hover:text-primary-600 transition-colors flex items-center gap-1.5"
+                className="text-sm font-semibold text-slate-700 dark:text-slate-300 hover:text-primary-600 dark:hover:text-primary-400 transition-colors flex items-center gap-1.5"
               >
                 <LayoutDashboard className="w-4 h-4" />
                 Dashboard
@@ -137,6 +138,8 @@ const MainLayout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
 
           {/* Actions */}
           <div className="hidden md:flex items-center gap-4">
+            {/* Appearance Mode Toggle */}
+            <ThemeToggle />
             {user ? (
               <>
                 {/* Notifications */}
@@ -275,30 +278,36 @@ const MainLayout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
               animate={{ x: 0 }}
               exit={{ x: '100%' }}
               transition={{ type: 'tween', duration: 0.25 }}
-              className="fixed right-0 top-0 bottom-0 w-80 max-w-full bg-white shadow-2xl z-50 flex flex-col p-6 border-l border-slate-200"
+              className="fixed right-0 top-0 bottom-0 w-80 max-w-full bg-white dark:bg-slate-900 shadow-2xl z-50 flex flex-col p-6 border-l border-slate-200 dark:border-slate-800"
             >
-              <div className="flex items-center justify-between mb-8 pb-4 border-b border-slate-100">
+              <div className="flex items-center justify-between mb-6 pb-4 border-b border-slate-100 dark:border-slate-800">
                 <BrandLogo />
                 <button
                   onClick={() => setMobileMenuOpen(false)}
-                  className="p-2 rounded-lg hover:bg-slate-100 text-slate-500 transition-colors cursor-pointer"
+                  className="p-2 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-500 dark:text-slate-400 transition-colors cursor-pointer"
                 >
                   <X className="w-6 h-6" />
                 </button>
               </div>
 
-              <div className="flex flex-col gap-4 flex-1">
+              {/* Mobile Appearance Mode Switcher */}
+              <div className="mb-4 p-3 bg-slate-50 dark:bg-slate-800/60 rounded-xl border border-slate-100 dark:border-slate-700/60 flex items-center justify-between">
+                <span className="text-xs font-bold text-slate-600 dark:text-slate-300">Appearance Mode</span>
+                <ThemeToggle />
+              </div>
+
+              <div className="flex flex-col gap-3 flex-1 overflow-y-auto">
                 {(!user || user.role === 'BUYER' || user.role === 'SELLER') && (
                   <Link
                     to="/products"
-                    className="text-base font-semibold text-slate-700 hover:text-primary-600 py-2 border-b border-slate-100"
+                    className="text-base font-semibold text-slate-700 dark:text-slate-200 hover:text-primary-600 dark:hover:text-primary-400 py-2 border-b border-slate-100 dark:border-slate-800"
                   >
                     Browse Catalog
                   </Link>
                 )}
                 <Link
                   to="/map"
-                  className="text-base font-semibold text-slate-700 hover:text-primary-600 py-2 border-b border-slate-100 flex items-center gap-2"
+                  className="text-base font-semibold text-slate-700 dark:text-slate-200 hover:text-primary-600 dark:hover:text-primary-400 py-2 border-b border-slate-100 dark:border-slate-800 flex items-center gap-2"
                 >
                   <MapPin className="w-5 h-5 text-emerald-600" />
                   Marketplace Map
@@ -309,7 +318,7 @@ const MainLayout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
                     setMobileMenuOpen(false);
                     setActivePolicy('ABOUT');
                   }}
-                  className="text-left text-base font-semibold text-slate-700 hover:text-primary-600 py-2 border-b border-slate-100 flex items-center gap-2 cursor-pointer"
+                  className="text-left text-base font-semibold text-slate-700 dark:text-slate-200 hover:text-primary-600 dark:hover:text-primary-400 py-2 border-b border-slate-100 dark:border-slate-800 flex items-center gap-2 cursor-pointer"
                 >
                   <Store className="w-5 h-5 text-orange-500" />
                   About Revola
@@ -318,7 +327,7 @@ const MainLayout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
                   <>
                     <Link
                       to={getDashboardLink()}
-                      className="text-base font-semibold text-slate-700 hover:text-primary-600 py-2 border-b border-slate-100 flex items-center gap-2"
+                      className="text-base font-semibold text-slate-700 dark:text-slate-200 hover:text-primary-600 dark:hover:text-primary-400 py-2 border-b border-slate-100 dark:border-slate-800 flex items-center gap-2"
                     >
                       <LayoutDashboard className="w-5 h-5" />
                       Dashboard
@@ -326,7 +335,7 @@ const MainLayout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
                     {user.role === 'BUYER' && (
                       <Link
                         to="/cart"
-                        className="text-base font-semibold text-slate-700 hover:text-primary-600 py-2 border-b border-slate-100 flex items-center justify-between"
+                        className="text-base font-semibold text-slate-700 dark:text-slate-200 hover:text-primary-600 dark:hover:text-primary-400 py-2 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between"
                       >
                         <span className="flex items-center gap-2">
                           <ShoppingCart className="w-5 h-5" />
@@ -339,26 +348,26 @@ const MainLayout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
                         )}
                       </Link>
                     )}
-                    <div className="mt-auto p-4 bg-slate-50 rounded-xl flex items-center justify-between">
+                    <div className="mt-auto p-4 bg-slate-50 dark:bg-slate-800/80 rounded-xl flex items-center justify-between border border-slate-100 dark:border-slate-700/60">
                       <div>
-                        <div className="text-sm font-bold text-slate-800">{user.name}</div>
-                        <div className="text-[10px] text-slate-400 uppercase font-bold">
+                        <div className="text-sm font-bold text-slate-800 dark:text-slate-100">{user.name}</div>
+                        <div className="text-[10px] text-slate-400 dark:text-slate-400 uppercase font-bold">
                           {user.role}
                         </div>
                       </div>
                       <button
                         onClick={handleLogout}
-                        className="text-rose-600 p-2 rounded-full hover:bg-rose-50 transition-colors cursor-pointer"
+                        className="text-rose-600 dark:text-rose-400 p-2 rounded-full hover:bg-rose-50 dark:hover:bg-rose-950/40 transition-colors cursor-pointer"
                       >
                         <LogOut className="w-5 h-5" />
                       </button>
                     </div>
                   </>
                 ) : (
-                  <div className="mt-auto flex flex-col gap-3">
+                  <div className="mt-auto flex flex-col gap-3 pt-4">
                     <Link
                       to="/login"
-                      className="w-full text-center py-3 rounded-xl border border-slate-200 text-sm font-bold text-slate-700 hover:bg-slate-50"
+                      className="w-full text-center py-3 rounded-xl border border-slate-200 dark:border-slate-700 text-sm font-bold text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800"
                     >
                       Sign In
                     </Link>
