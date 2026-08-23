@@ -10,12 +10,17 @@ router.post('/login', authController.login);
 router.post('/google', authController.googleAuth);
 router.post('/logout', authController.logout);
 router.post('/refresh', authController.refresh);
+router.post('/forgotpassword', authController.forgotPassword);
+router.post('/resetpassword', authController.resetPassword);
 
 // Protected routes
 router.use(protect);
 
 router.get('/me', authController.getMe);
 router.put('/me/update', authController.updateMe);
+router.put('/updatedetails', authController.updateDetails);
+router.put('/updatepassword', authController.updatePassword);
+router.post('/avatar', authController.uploadAvatar);
 router.post('/onboarding', authController.completeOnboarding);
 router.put('/seller/location', authController.updateSellerLocation);
 

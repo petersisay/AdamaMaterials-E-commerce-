@@ -104,7 +104,8 @@ exports.addToCart = asyncHandler(async (req, res, next) => {
 
 // 3. Update item quantity in cart
 exports.updateCartItem = asyncHandler(async (req, res, next) => {
-  const { productId, quantity } = req.body;
+  const productId = req.params.productId || req.body.productId;
+  const { quantity } = req.body;
   const qty = Number(quantity);
 
   if (qty <= 0) {
@@ -121,7 +122,7 @@ exports.updateCartItem = asyncHandler(async (req, res, next) => {
   }
 
   const cart = await getOrCreateCart(req.user._id);
-  const itemIndex = cart.items.findIndex(item => item.product._id.toString() === productId);
+  const itemIndex = cart.items.findIndex(item => item.product && item.product._id.toString() === productId.toString());
 
   if (itemIndex === -1) {
     return next(new AppError('Item not found in cart.', 404));
@@ -145,10 +146,10 @@ exports.updateCartItem = asyncHandler(async (req, res, next) => {
 
 // 4. Remove item from cart
 exports.removeFromCart = asyncHandler(async (req, res, next) => {
-  const { productId } = req.body;
+  const productId = req.params.productId || req.body.productId;
 
   const cart = await getOrCreateCart(req.user._id);
-  cart.items = cart.items.filter(item => item.product && item.product._id.toString() !== productId);
+  cart.items = cart.items.filter(item => item.product && item.product._id.toString() !== productId.toString());
   await cart.save();
 
   const populatedCart = await Cart.findOne({ user: req.user._id }).populate('items.product');

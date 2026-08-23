@@ -38,6 +38,7 @@ async function verifyGoogleToken(idToken) {
 exports.register = asyncHandler(async (req, res, next) => {
   const {
     name,
+    username,
     email,
     password,
     role = 'BUYER',
@@ -50,23 +51,44 @@ exports.register = asyncHandler(async (req, res, next) => {
     bankAccountNumber,
   } = req.body;
 
+  if (!email || !email.trim()) {
+    return next(new AppError('Email address is required.', 400));
+  }
+
+  if (!password || password.length < 6) {
+    return next(new AppError('Password is required and must be at least 6 characters.', 400));
+  }
+
   // Basic check on roles
   if (role && !['BUYER', 'SELLER'].includes(role)) {
     return next(new AppError('You can only register as a BUYER or SELLER.', 400));
   }
 
-  // Check if user already exists
-  const existingUser = await User.findOne({ email: email.trim().toLowerCase() });
-  if (existingUser) {
-    return next(new AppError('Email address is already in use.', 400));
+  const cleanEmail = email.trim().toLowerCase();
+  const cleanUsername = (username || '').trim().toLowerCase();
+  const cleanName = (name || username || email.split('@')[0]).trim();
+
+  // 1. Check if email already exists
+  const existingEmail = await User.findOne({ email: cleanEmail });
+  if (existingEmail) {
+    return next(new AppError('An account already exists with this email. Please sign in instead.', 400));
+  }
+
+  // 2. Check if username already exists
+  if (cleanUsername) {
+    const existingUsername = await User.findOne({ username: cleanUsername });
+    if (existingUsername) {
+      return next(new AppError('Username already exists. Please choose a different username.', 400));
+    }
   }
 
   const isSeller = role === 'SELLER';
 
   // Create new user
   const newUser = await User.create({
-    name: name.trim(),
-    email: email.trim().toLowerCase(),
+    name: cleanName,
+    username: cleanUsername || undefined,
+    email: cleanEmail,
     password,
     role,
     roles: [role],
@@ -74,11 +96,11 @@ exports.register = asyncHandler(async (req, res, next) => {
     isActive: true, // Default active
     isSellerApproved: isSeller, // Auto-approve registered demo sellers
     sellerProfile: isSeller ? {
-      shopName: shopName ? shopName.trim() : `${name.trim()}'s Materials Depot`,
+      shopName: shopName ? shopName.trim() : `${cleanName}'s Materials Depot`,
       shopDescription: shopDescription ? shopDescription.trim() : 'Salvaged construction and reusable materials in Adama.',
       shopAddress: shopAddress ? shopAddress.trim() : 'Bole Subcity, Industry Zone, Adama',
       bankName: bankName ? bankName.trim() : 'Commercial Bank of Ethiopia (CBE)',
-      bankAccountHolder: bankAccountHolder ? bankAccountHolder.trim() : name.trim(),
+      bankAccountHolder: bankAccountHolder ? bankAccountHolder.trim() : cleanName,
       bankAccountNumber: bankAccountNumber ? bankAccountNumber.trim() : '1000123456789',
       approvalStatus: 'APPROVED',
       shopLocation: {
@@ -107,30 +129,36 @@ exports.register = asyncHandler(async (req, res, next) => {
   });
 });
 
-// 2. Login User
+// 2. Login User (Supports Email OR Username)
 exports.login = asyncHandler(async (req, res, next) => {
-  const { email, password } = req.body;
+  const { email, username, identifier, password } = req.body;
+  const loginIdentifier = (identifier || email || username || '').trim().toLowerCase();
 
-  if (!email || !password) {
-    return next(new AppError('Please provide both email and password.', 400));
+  if (!loginIdentifier || !password) {
+    return next(new AppError('Please provide your username/email and password.', 400));
   }
 
-  const cleanEmail = email.trim().toLowerCase();
-
-  // Find user and select password (case-insensitive)
-  let user = await User.findOne({ email: cleanEmail }).select('+password');
+  // Find user by email OR username OR name (case-insensitive)
+  let user = await User.findOne({
+    $or: [
+      { email: loginIdentifier },
+      { username: loginIdentifier },
+      { name: new RegExp('^' + loginIdentifier + '$', 'i') },
+    ],
+  }).select('+password');
 
   // Auto-seed demo user in dev if missing
-  if (!user && (cleanEmail.includes('marketplace.com') || cleanEmail.includes('revola.com'))) {
+  if (!user && (loginIdentifier.includes('marketplace.com') || loginIdentifier.includes('revola.com'))) {
     let role = 'BUYER';
     let name = 'Adama Demo User';
-    if (cleanEmail.includes('admin')) { role = 'ADMIN'; name = 'System Administrator'; }
-    else if (cleanEmail.includes('seller')) { role = 'SELLER'; name = 'Abebe Materials Depot'; }
-    else if (cleanEmail.includes('staff') || cleanEmail.includes('finance') || cleanEmail.includes('logistics')) { role = 'STAFF'; name = 'Operations Staff'; }
+    if (loginIdentifier.includes('admin')) { role = 'ADMIN'; name = 'System Administrator'; }
+    else if (loginIdentifier.includes('seller')) { role = 'SELLER'; name = 'Abebe Materials Depot'; }
+    else if (loginIdentifier.includes('staff') || loginIdentifier.includes('finance') || loginIdentifier.includes('logistics')) { role = 'STAFF'; name = 'Operations Staff'; }
 
     user = await User.create({
       name,
-      email: cleanEmail,
+      username: loginIdentifier.split('@')[0],
+      email: loginIdentifier,
       password: password,
       role,
       roles: [role],
@@ -148,12 +176,12 @@ exports.login = asyncHandler(async (req, res, next) => {
   }
 
   // Verify password with fallback for standard demo accounts
-  const isDemoEmail = cleanEmail.includes('marketplace.com') || cleanEmail.includes('revola.com');
+  const isDemoEmail = loginIdentifier.includes('marketplace.com') || loginIdentifier.includes('revola.com');
   const isDemoPass = ['buyerpass123', 'sellerpass123', 'adminpass123', 'staffpass123', 'password123', 'admin123'].includes(password.toLowerCase());
   const isMatch = user && (await user.comparePassword(password) || (isDemoEmail && isDemoPass));
 
   if (!user || !isMatch) {
-    return next(new AppError('Incorrect email or password.', 401));
+    return next(new AppError('Incorrect username/email or password.', 401));
   }
 
   if (!user.isActive) {
@@ -537,17 +565,29 @@ exports.getMe = asyncHandler(async (req, res, next) => {
 
 // 7. Update user profile details
 exports.updateMe = asyncHandler(async (req, res, next) => {
-  const { name, email, phoneNumber } = req.body;
+  const { name, username, email, phoneNumber, avatar } = req.body;
 
   const updates = {};
-  if (name) updates.name = name;
-  if (phoneNumber) updates.phoneNumber = phoneNumber;
-  if (email) {
-    const existing = await User.findOne({ email, _id: { $ne: req.user._id } });
+  if (name) updates.name = name.trim();
+  if (phoneNumber !== undefined) updates.phoneNumber = phoneNumber.trim();
+  if (avatar) updates.avatar = avatar;
+
+  if (username) {
+    const cleanUsername = username.trim().toLowerCase();
+    const existing = await User.findOne({ username: cleanUsername, _id: { $ne: req.user._id } });
     if (existing) {
-      return next(new AppError('Email already in use.', 400));
+      return next(new AppError('Username already exists. Please choose a different username.', 400));
     }
-    updates.email = email;
+    updates.username = cleanUsername;
+  }
+
+  if (email) {
+    const cleanEmail = email.trim().toLowerCase();
+    const existing = await User.findOne({ email: cleanEmail, _id: { $ne: req.user._id } });
+    if (existing) {
+      return next(new AppError('An account already exists with this email.', 400));
+    }
+    updates.email = cleanEmail;
   }
 
   const updatedUser = await User.findByIdAndUpdate(req.user._id, updates, {
@@ -557,7 +597,153 @@ exports.updateMe = asyncHandler(async (req, res, next) => {
 
   res.status(200).json({
     success: true,
+    message: 'Profile updated successfully.',
     user: updatedUser,
+  });
+});
+exports.updateDetails = exports.updateMe;
+
+// 8. Update Password
+exports.updatePassword = asyncHandler(async (req, res, next) => {
+  const { currentPassword, newPassword, password } = req.body;
+  const targetNewPass = newPassword || password;
+
+  if (!currentPassword || !targetNewPass) {
+    return next(new AppError('Please provide both your current password and new password.', 400));
+  }
+
+  if (targetNewPass.length < 6) {
+    return next(new AppError('New password must be at least 6 characters.', 400));
+  }
+
+  const user = await User.findById(req.user._id).select('+password');
+  if (!user) {
+    return next(new AppError('User not found.', 404));
+  }
+
+  const isMatch = await user.comparePassword(currentPassword);
+  if (!isMatch) {
+    return next(new AppError('Current password is incorrect.', 400));
+  }
+
+  user.password = targetNewPass;
+  await user.save();
+
+  // Issue new token
+  const tokens = sendTokenCookies(user, res);
+  user.refreshToken = tokens.refreshToken;
+  await user.save({ validateBeforeSave: false });
+
+  user.password = undefined;
+
+  res.status(200).json({
+    success: true,
+    message: 'Password updated successfully.',
+    token: tokens.accessToken,
+    accessToken: tokens.accessToken,
+    user,
+  });
+});
+
+// 9. Forgot Password
+exports.forgotPassword = asyncHandler(async (req, res, next) => {
+  const { email, username, identifier } = req.body;
+  const lookup = (identifier || email || username || '').trim().toLowerCase();
+
+  if (!lookup) {
+    return next(new AppError('Please provide your registered email address or username.', 400));
+  }
+
+  const user = await User.findOne({
+    $or: [{ email: lookup }, { username: lookup }],
+  });
+
+  if (!user) {
+    // For security, don't leak user existence
+    return res.status(200).json({
+      success: true,
+      message: 'If an account exists with this email/username, password reset instructions have been sent.',
+    });
+  }
+
+  const crypto = require('crypto');
+  const resetToken = crypto.randomBytes(32).toString('hex');
+  user.passwordResetToken = crypto.createHash('sha256').update(resetToken).digest('hex');
+  user.passwordResetExpires = Date.now() + 30 * 60 * 1000; // 30 mins
+  await user.save({ validateBeforeSave: false });
+
+  res.status(200).json({
+    success: true,
+    message: 'Password recovery instructions have been sent.',
+    resetToken, // Returned for dev/mobile testing convenience
+  });
+});
+
+// 10. Reset Password
+exports.resetPassword = asyncHandler(async (req, res, next) => {
+  const { token, password } = req.body;
+
+  if (!token || !password) {
+    return next(new AppError('Please provide the reset token and your new password.', 400));
+  }
+
+  if (password.length < 6) {
+    return next(new AppError('Password must be at least 6 characters.', 400));
+  }
+
+  const crypto = require('crypto');
+  const hashedToken = crypto.createHash('sha256').update(token).digest('hex');
+
+  const user = await User.findOne({
+    passwordResetToken: hashedToken,
+    passwordResetExpires: { $gt: Date.now() },
+  });
+
+  if (!user) {
+    return next(new AppError('Password reset token is invalid or has expired.', 400));
+  }
+
+  user.password = password;
+  user.passwordResetToken = undefined;
+  user.passwordResetExpires = undefined;
+  await user.save();
+
+  const tokens = sendTokenCookies(user, res);
+  user.password = undefined;
+
+  res.status(200).json({
+    success: true,
+    message: 'Password reset successful. You are now signed in.',
+    token: tokens.accessToken,
+    accessToken: tokens.accessToken,
+    user,
+  });
+});
+
+// 11. Upload Profile Avatar
+exports.uploadAvatar = asyncHandler(async (req, res, next) => {
+  let avatarUrl = '';
+
+  if (req.file) {
+    const StorageService = require('../services/StorageService');
+    avatarUrl = await StorageService.uploadImage(req.file);
+  } else if (req.body.avatar) {
+    avatarUrl = req.body.avatar;
+  } else {
+    return next(new AppError('Please select a photo to upload.', 400));
+  }
+
+  const user = await User.findByIdAndUpdate(
+    req.user._id,
+    { avatar: avatarUrl },
+    { new: true, runValidators: true }
+  );
+
+  res.status(200).json({
+    success: true,
+    message: 'Profile photo updated successfully.',
+    avatar: avatarUrl,
+    user,
   });
 });
 
