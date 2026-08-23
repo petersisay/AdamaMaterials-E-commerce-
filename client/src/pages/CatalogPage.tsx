@@ -62,8 +62,13 @@ const CatalogPage: React.FC = () => {
     } else {
       nextParams.delete(key);
     }
-    nextParams.set('page', '1'); // reset page on filter change
+    if (key !== 'page') {
+      nextParams.set('page', '1'); // reset page only when filters change
+    }
     setSearchParams(nextParams);
+    if (key === 'page') {
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
   };
 
   const toggleCondition = (cond: string) => {
@@ -290,22 +295,48 @@ const CatalogPage: React.FC = () => {
 
               {/* Pagination */}
               {pages > 1 && (
-                <div className="flex items-center justify-center gap-4 mt-12 border-t border-slate-200/80 pt-6">
-                  <button
-                    disabled={page === 1}
-                    onClick={() => updateParam('page', (page - 1).toString())}
-                    className="p-2 border border-slate-200 rounded-xl hover:bg-slate-50 disabled:opacity-40 transition-colors cursor-pointer"
-                  >
-                    <ChevronLeft className="w-5 h-5" />
-                  </button>
-                  <span className="text-sm font-semibold text-slate-600">Page {page} of {pages}</span>
-                  <button
-                    disabled={page === pages}
-                    onClick={() => updateParam('page', (page + 1).toString())}
-                    className="p-2 border border-slate-200 rounded-xl hover:bg-slate-50 disabled:opacity-40 transition-colors cursor-pointer"
-                  >
-                    <ChevronRight className="w-5 h-5" />
-                  </button>
+                <div className="flex flex-col sm:flex-row items-center justify-center gap-4 mt-12 border-t border-slate-200/80 pt-8 pb-4">
+                  <div className="flex items-center gap-2">
+                    <button
+                      disabled={page <= 1}
+                      onClick={() => updateParam('page', (page - 1).toString())}
+                      aria-label="Previous Page"
+                      className="p-2.5 border border-slate-300 rounded-xl hover:bg-slate-100 hover:border-slate-400 disabled:opacity-30 disabled:cursor-not-allowed disabled:hover:bg-transparent transition-all cursor-pointer shadow-xs bg-white text-slate-700 font-bold flex items-center gap-1 text-xs"
+                    >
+                      <ChevronLeft className="w-4 h-4" />
+                      <span className="hidden sm:inline">Prev</span>
+                    </button>
+
+                    <div className="flex items-center gap-1.5 px-2">
+                      {Array.from({ length: pages }, (_, i) => i + 1).map((pNum) => (
+                        <button
+                          key={pNum}
+                          onClick={() => updateParam('page', pNum.toString())}
+                          className={`w-9 h-9 rounded-xl text-xs font-extrabold transition-all cursor-pointer flex items-center justify-center ${
+                            page === pNum
+                              ? 'bg-primary-600 text-white shadow-md'
+                              : 'bg-white border border-slate-200 text-slate-700 hover:bg-slate-100'
+                          }`}
+                        >
+                          {pNum}
+                        </button>
+                      ))}
+                    </div>
+
+                    <button
+                      disabled={page >= pages}
+                      onClick={() => updateParam('page', (page + 1).toString())}
+                      aria-label="Next Page"
+                      className="p-2.5 border border-slate-300 rounded-xl hover:bg-slate-100 hover:border-slate-400 disabled:opacity-30 disabled:cursor-not-allowed disabled:hover:bg-transparent transition-all cursor-pointer shadow-xs bg-white text-slate-700 font-bold flex items-center gap-1 text-xs"
+                    >
+                      <span className="hidden sm:inline">Next</span>
+                      <ChevronRight className="w-4 h-4" />
+                    </button>
+                  </div>
+
+                  <span className="text-xs font-bold text-slate-500 bg-slate-100 px-3 py-1.5 rounded-full border border-slate-200">
+                    Page {page} of {pages}
+                  </span>
                 </div>
               )}
             </>
