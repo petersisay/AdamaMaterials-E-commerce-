@@ -267,6 +267,8 @@ exports.googleAuth = asyncHandler(async (req, res, next) => {
   let user = await User.findOne({ $or: [{ googleId }, { email }] });
   let isNewUser = false;
 
+  const defaultUsername = email.split('@')[0].replace(/[^a-zA-Z0-9_.-]/g, '').toLowerCase();
+
   if (user) {
     if (!user.googleId) {
       user.googleId = googleId;
@@ -274,7 +276,10 @@ exports.googleAuth = asyncHandler(async (req, res, next) => {
     if (!user.avatar && avatar) {
       user.avatar = avatar;
     }
-    if (isSellerRole) {
+    if (!user.username) {
+      user.username = defaultUsername;
+    }
+    if (isSellerRole && user.role !== 'SELLER') {
       user.role = 'SELLER';
       if (!user.roles.includes('SELLER')) user.roles.push('SELLER');
       user.isSellerApproved = true;
@@ -300,6 +305,7 @@ exports.googleAuth = asyncHandler(async (req, res, next) => {
     isNewUser = true;
     user = await User.create({
       name,
+      username: defaultUsername,
       email,
       googleId,
       avatar,
