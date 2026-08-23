@@ -1118,7 +1118,7 @@ const seedData = async (isImported = false) => {
         materialType: electroMat._id,
         condition: 'Good',
         images: [
-          'https://images.unsplash.com/photo-1574944985070-8f3ebc6b79d2?w=600&auto=format&fit=crop&q=80',
+          'https://images.unsplash.com/photo-1510557880182-3d4d3cba35a5?w=600&auto=format&fit=crop&q=80',
         ],
         seller: seller1._id,
         approvalStatus: 'APPROVED',
@@ -1238,7 +1238,7 @@ const seedData = async (isImported = false) => {
         materialType: electroMat._id,
         condition: 'Good',
         images: [
-          'https://images.unsplash.com/photo-1574269909862-7e1d70bb8078?w=600&auto=format&fit=crop&q=80',
+          'https://images.unsplash.com/photo-1584992236310-6edddc08acff?w=600&auto=format&fit=crop&q=80',
         ],
         seller: seller1._id,
         approvalStatus: 'APPROVED',
