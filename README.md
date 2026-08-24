@@ -1,264 +1,293 @@
-# 🏗️ AdaMaterials — Managed Marketplace
+# ♻️ Revola — Managed Reclaimed Materials Marketplace (Web & Backend)
 
-[![Node.js](https://img.shields.io/badge/Node.js-18+-339933?style=flat&logo=node.js&logoColor=white)](https://nodejs.org/)
-[![React](https://img.shields.io/badge/React-18-61DAFB?style=flat&logo=react&logoColor=black)](https://reactjs.org/)
-[![TypeScript](https://img.shields.io/badge/TypeScript-5.0+-3178C6?style=flat&logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
-[![Tailwind CSS](https://img.shields.io/badge/Tailwind_CSS-3.4-38B2AC?style=flat&logo=tailwind-css&logoColor=white)](https://tailwindcss.com/)
-[![MongoDB](https://img.shields.io/badge/MongoDB-Atlas-47A248?style=flat&logo=mongodb&logoColor=white)](https://www.mongodb.com/)
-[![Python](https://img.shields.io/badge/Python-3.10+-3776AB?style=flat&logo=python&logoColor=white)](https://www.python.org/)
-[![License](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
+[![CI Pipeline](https://img.shields.io/badge/CI-Passing-success?style=flat-square&logo=githubactions)](https://github.com/Revola-MarketPlace/Revola)
+[![Node.js](https://img.shields.io/badge/Node.js-v20%2B-green?style=flat-square&logo=node.js)](https://nodejs.org/)
+[![React](https://img.shields.io/badge/React-19.0-blue?style=flat-square&logo=react)](https://react.dev/)
+[![TypeScript](https://img.shields.io/badge/TypeScript-5.0%2B-blue?style=flat-square&logo=typescript)](https://www.typescriptlang.org/)
+[![Tailwind CSS](https://img.shields.io/badge/TailwindCSS-v4.0-38bdf8?style=flat-square&logo=tailwindcss)](https://tailwindcss.com/)
+[![MongoDB](https://img.shields.io/badge/MongoDB-Atlas-47A248?style=flat-square&logo=mongodb)](https://www.mongodb.com/)
+[![License](https://img.shields.io/badge/License-Proprietary-red?style=flat-square)](#)
 
-**AdaMaterials** is a digital managed marketplace designed for **Adama City, Oromia, Ethiopia**. It connects local businesses, contractors, fabricators, and residents to safely buy, sell, and recycle pre-owned and secondary materials — including used furniture, electronics, construction steel, plastics, tools, and industrial equipment.
+> **Revola** is an enterprise-grade, managed circular marketplace engineered specifically for Adama, Ethiopia. The platform connects demolition contractors, recyclers, fabricators, and builders to source, list, trade, and repurpose high-value salvaged and circular construction materials (Metals, Lumber, Masonry, Electrical, and Industrial Plastics).
 
 ---
 
-## 🌟 Key Features
+## 📑 Table of Contents
 
-### 🛍️ 1. Buyer Experience
-* **Rich Categorized Catalog**: Search and filter by category (Used Furniture, Electronics, Scrap Metals, Plastics, Tools), condition (`Brand New`, `Like New`, `Good`, `Fair`, `Scrap`), price, and sub-city location.
-* **Smart Cart & Multi-Seller Orders**: Add items from multiple local sellers into a unified cart. Order subtotal, dynamic delivery fees, and per-seller payouts are calculated automatically.
-* **Dual Payment Proof Submission**:
-  * **Direct Website Upload**: Upload payment receipt screenshots (PNG/JPG/WEBP) with instant live preview and enter transaction reference IDs (CBE / Telebirr).
-  * **Telegram Bot Companion**: Use deep-linked interactive Telegram verification with inline button flows.
-* **Live Order Tracking**: Real-time status updates (`PENDING_PAYMENT` ➔ `CONFIRMED` ➔ `IN_TRANSIT` ➔ `DELIVERED`).
-* **Ratings & Dispute Resolution**: Submit verified product reviews or raise delivery/quality disputes with admin arbitration.
+- [Key Platform Features](#-key-platform-features)
+- [System Architecture](#-system-architecture)
+- [Repository Structure](#-repository-structure)
+- [Technology Stack](#-technology-stack)
+- [Getting Started](#-getting-started)
+  - [Prerequisites](#prerequisites)
+  - [Backend Setup (`server/`)](#backend-setup-server)
+  - [Frontend Setup (`client/`)](#frontend-setup-client)
+  - [Telegram Verification Bot Setup (`bot/`)](#telegram-verification-bot-setup-bot)
+- [Environment Configuration](#-environment-configuration)
+- [API Architecture & Endpoints](#-api-architecture--endpoints)
+- [Security & Data Isolation](#-security--data-isolation)
+- [Team Git Branching Workflow](#-team-git-branching-workflow)
 
-### 📦 2. Seller Portal
-* **Inventory & Listing Management**: List new and used materials with multi-photo uploads, stock tracking, and pricing.
-* **Sales Analytics**: View order volume, gross sales, platform commission deductions, and pending balance.
-* **Automated Payout Tracking**: Escrow-backed payout records generated automatically for each order line upon delivery confirmation.
+---
 
-### 🚚 3. Logistics & Delivery Management
-* **Dynamic Delivery Fee Engine**: Automatically calculates delivery charges based on:
-  * Destination sub-city distance in Adama (Bole, Kebele 01–08, Industry Zone, Melka Adama, etc.).
-  * Total items and weight volume in the cart.
-  * Day-of-week and peak-time logistics multipliers.
-* **Fleet Dispatch**: Staff logistics portal to assign drivers, update delivery tracking milestones, and confirm drop-offs.
+## 🌟 Key Platform Features
 
-### 💳 4. Finance & Admin Verification
-* **Proof Inspection Panel**: Staff and Admins review submitted bank transfer references and inspect high-resolution receipt screenshots via a built-in zoom modal.
-* **One-Click Approval / Rejection**: Approving a payment automatically triggers order confirmation, reserves stock, generates courier tasks, and sends in-app notifications.
-* **Role-Based Access Control (RBAC)**: Fine-grained permissions for Admins, Staff Finance (`VERIFY_PAYMENTS`, `PROCESS_PAYOUTS`), and Staff Logistics (`MANAGE_DELIVERIES`, `SET_DELIVERY_FEES`).
-* **Audit Trail**: Detailed audit logging for all critical financial and administrative operations.
+- 🔐 **Multi-Role Authentication & Access Control (RBAC)**: Distinct permissions and isolated data views for `BUYER`, `SELLER`, `STAFF`, and `ADMIN`.
+- 🌐 **Google OAuth 2.0 Integration**: Safe account linking that matches existing user identities without creating duplicate accounts.
+- 📦 **Dynamic Reclaimed Materials Catalog**: Category filtering (Metals, Timber, Masonry, Plastics), condition grading (`New`, `Like New`, `Good`, `Salvaged`), and live inventory tracking.
+- 🛒 **Isolated Cart & Checkout Engine**: Real-time stock validation, automated inventory decrements, and user-scoped carts.
+- 🚚 **Dynamic Geocoded Delivery Pricing**: Automatic delivery fee engine calculating vehicle tiers, item weights, weekend surge, and Adama geographic boundary validations.
+- 💳 **Chapa Ethiopian Payment Gateway**: Secure hosted Chapa checkout, HMAC-SHA256 webhook signature verification, and automated status transition state machine.
+- 🏦 **Manual Bank Transfer & Telegram Bot Verification**: Buyers can submit Commercial Bank of Ethiopia (CBE) transfer receipts via web or Telegram bot; Staff review and verify via a dedicated verification dashboard.
+- 🗺️ **Geocoded Supply Depots & Marketplace Map**: Interactive OpenStreetMap visualization of 30+ supply yards and depots across Adama subcities.
+- 🌓 **Appearance Mode (Light / Dark / System)**: Tailwind CSS v4 custom dark variant with zero-flash of unstyled content (FOUC).
 
 ---
 
 ## 🏛️ System Architecture
 
-```
-                               ┌────────────────────────┐
-                               │   Vercel Deployment    │
-                               │  (React 18 + TS + Vite)│
-                               └───────────┬────────────┘
-                                           │ HTTPS / REST
-                                           ▼
-┌────────────────────────┐     ┌────────────────────────┐     ┌────────────────────────┐
-│   Railway Deployment   │────▶│   Render Web Service   │◀────│   MongoDB Atlas Cloud  │
-│  (Python Telegram Bot) │     │ (Node.js + Express.js) │     │   (Mongoose ODM DB)    │
-└────────────────────────┘     └────────────────────────┘     └────────────────────────┘
+```text
+┌────────────────────────────────────────────────────────────────────────┐
+│                              CLIENT TIER                               │
+│      React 19 + TypeScript + Vite + Tailwind CSS v4 + React Router     │
+└───────────────────────────────────┬────────────────────────────────────┘
+                                    │ HTTPS / REST / JSON
+┌───────────────────────────────────▼────────────────────────────────────┐
+│                              SERVICE TIER                              │
+│       Node.js + Express.js API Gateway with JWT & Role Middleware      │
+│  ├── Auth & Google OAuth Controller                                    │
+│  ├── Product Catalog & Marketplace Map                                 │
+│  ├── Cart & Checkout Engine                                            │
+│  ├── Dynamic Adama Delivery Fee Calculator                             │
+│  ├── Chapa & Bank Transfer Payment Engine                              │
+│  └── In-App Notifications & Audit Logger                               │
+└─────────────────┬───────────────────────────────────┬──────────────────┘
+                  │ Mongoose ODM                      │ HTTPS Webhooks
+┌─────────────────▼──────────────────┐   ┌────────────▼──────────────────┐
+│           DATABASE TIER            │   │         EXTERNAL SERVICES     │
+│  MongoDB Atlas (Document Store     │   │  • Chapa Payment Gateway      │
+│  & Geospatial Coordinate Indexes)  │   │  • Telegram Verification Bot  │
+└────────────────────────────────────┘   └───────────────────────────────┘
 ```
 
 ---
 
-## 📁 Repository Structure
+## 📂 Repository Structure
 
-```
-AdaMaterials-E-commerce/
-├── client/                     # Frontend Application
+```text
+Revola/
+├── client/                     # Vite + React 19 Frontend Web Application
+│   ├── public/                 # Static assets, logos, and web manifest
 │   ├── src/
-│   │   ├── components/         # Reusable UI components & ProtectedRoute
-│   │   ├── context/            # Auth, Cart, and Toast Context Providers
-│   │   ├── layouts/            # MainLayout (Navbar, Footer, Notifications)
-│   │   ├── pages/              # Landing, Catalog, Checkout, Dashboards
-│   │   └── services/           # Axios API configuration & token handlers
-│   ├── index.html              # HTML entry point
+│   │   ├── components/         # Reusable UI components (ThemeToggle, BrandLogo, Modals)
+│   │   ├── context/            # React Contexts (AuthContext, ThemeContext, CartContext)
+│   │   ├── layouts/            # Page layouts (MainLayout, DashboardLayout)
+│   │   ├── pages/              # Screen views (Home, Marketplace, Checkout, Tracking, Profile)
+│   │   ├── services/           # Axios HTTP client and API endpoints
+│   │   └── utils/              # Formatting and helper utilities
 │   ├── package.json
-│   └── vite.config.ts          # Vite build configuration
+│   ├── tailwind.config.js
+│   └── vite.config.ts
 │
-├── server/                     # Backend API Service
+├── server/                     # Express.js REST API Backend
 │   ├── src/
-│   │   ├── controllers/        # Auth, Products, Orders, Payments, Deliveries
-│   │   ├── middleware/         # JWT Auth, Role Guard, Multer Image Upload
-│   │   ├── models/             # User, Product, Order, Payment, Delivery, Payout
-│   │   ├── routes/             # RESTful API routing definitions
-│   │   ├── services/           # PaymentService, StorageService, TelegramService
-│   │   ├── utils/              # Fee calculators, async handler, error utility
-│   │   ├── jobs/seed.js        # Catalog seeder with realistic pre-owned goods
-│   │   └── app.js              # Express application entry
-│   ├── tests/                  # Automated integration test suite (32 tests)
-│   └── package.json
+│   │   ├── config/             # DB connection & Adama service boundary geometry
+│   │   ├── controllers/        # Route controllers (auth, product, cart, order, payment)
+│   │   ├── middleware/         # JWT auth guard (`protect`), role guard (`restrictTo`)
+│   │   ├── models/             # Mongoose schemas (User, Product, Cart, Order, Payment)
+│   │   ├── routes/             # Express API routes mounted under /api/v1/*
+│   │   ├── services/           # Payment providers (Chapa, Mock, Bank) & Storage
+│   │   └── utils/              # Delivery fee calculator, AppError, asyncHandler
+│   ├── package.json
+│   └── nodemon.json
 │
-├── bot/                        # Telegram Verification Bot
-│   └── telegram_verifier_bot.py # Python Telegram Bot service
-└── README.md
+├── bot/                        # Telegram Payment Receipt Verification Bot
+│   ├── telegram_verifier_bot.py
+│   └── requirements.txt
+│
+├── docs/                       # Architecture, API specifications, and team guidelines
+│   ├── api/                    # Endpoint documentation
+│   ├── architecture/           # System design & security models
+│   ├── database/               # MongoDB schema diagrams
+│   └── team/                   # Team standards & WEBSITE_BACKEND_TEAM.md
+│
+├── .github/                    # GitHub Actions CI/CD workflows and PR templates
+├── README.md
+├── CONTRIBUTING.md
+├── ARCHITECTURE.md
+├── .gitignore
+└── .editorconfig
 ```
 
 ---
 
-## ⚙️ Environment Variables Configuration
+## 💻 Technology Stack
 
-> 🔒 **Security Notice**: Never commit real production secrets, API keys, or database credentials to version control. Use `.env` files locally and environment configuration panels in production.
+| Layer | Technology | Purpose |
+|---|---|---|
+| **Frontend** | React 19, TypeScript, Vite 6 | Fast, modern, component-driven web user interface |
+| **Styling** | Tailwind CSS v4, PostCSS, Lucide Icons | Responsive utility-first design with dark/light themes |
+| **Maps** | Leaflet, React-Leaflet, OpenStreetMap | Geocoded material depot mapping and driver tracking |
+| **Backend** | Node.js (v20+), Express.js | High-throughput REST API with clean routing |
+| **Database** | MongoDB Atlas, Mongoose 8 | Flexible document storage with 2dsphere geo-indexing |
+| **Auth** | JWT, bcryptjs, Google OAuth 2.0 | Secure session management and password hashing |
+| **Payments** | Chapa API, CBE Bank Transfer | Ethiopian Birr (ETB) online & offline transactions |
+| **Bot Service**| Python 3.11, python-telegram-bot | Buyer receipt submission and admin Telegram alerts |
 
-### 🖥️ Backend Server (`server/.env`)
+---
 
-```env
-# Server Runtime
+## 🚀 Getting Started
+
+### Prerequisites
+- **Node.js**: `>= 20.0.0`
+- **npm**: `>= 9.0.0`
+- **MongoDB**: Local instance running on `mongodb://localhost:27017` or a MongoDB Atlas connection string.
+- **Python**: `>= 3.10` (only if running the optional Telegram verification bot).
+
+---
+
+### Backend Setup (`server/`)
+
+1. Navigate to the server folder:
+   ```bash
+   cd server
+   ```
+2. Install dependencies:
+   ```bash
+   npm install
+   ```
+3. Create your environment configuration:
+   ```bash
+   cp .env.example .env
+   ```
+   *(Fill in your `MONGODB_URI`, `JWT_SECRET`, and `CHAPA_SECRET_KEY`)*
+4. Start the backend development server:
+   ```bash
+   npm run dev
+   ```
+   *Server runs at:* `http://localhost:5000`
+
+---
+
+### Frontend Setup (`client/`)
+
+1. Navigate to the client folder:
+   ```bash
+   cd client
+   ```
+2. Install dependencies:
+   ```bash
+   npm install
+   ```
+3. Configure environment variables:
+   ```bash
+   cp .env.example .env
+   ```
+4. Start the Vite development server:
+   ```bash
+   npm run dev
+   ```
+   *Web application opens at:* `http://localhost:5173`
+
+---
+
+### Telegram Verification Bot Setup (`bot/`)
+
+1. Navigate to the bot directory:
+   ```bash
+   cd bot
+   ```
+2. Install Python requirements:
+   ```bash
+   pip install -r requirements.txt
+   ```
+3. Configure `.env` with your Telegram Bot Token:
+   ```bash
+   cp .env.example .env
+   ```
+4. Run the bot:
+   ```bash
+   python telegram_verifier_bot.py
+   ```
+
+---
+
+## 🔒 Environment Configuration
+
+### Backend (`server/.env.example`)
+```ini
 NODE_ENV=development
 PORT=5000
 
-# Database
-MONGO_URI=mongodb+srv://<DB_USER>:<DB_PASSWORD>@<CLUSTER_URL>/<DB_NAME>?retryWrites=true&w=majority
+# MongoDB Connection String
+MONGODB_URI=mongodb://localhost:27017/revola_marketplace
 
-# Authentication Secrets
-JWT_SECRET=<YOUR_LONG_RANDOM_JWT_SECRET_KEY>
-JWT_EXPIRES_IN=30d
+# JWT Credentials
+JWT_SECRET=your_super_secret_jwt_key_here
+JWT_EXPIRE=30d
+COOKIE_EXPIRE=30
 
-# Cross-Origin Allowed Client URL
+# Web Client URL
 CLIENT_URL=http://localhost:5173
 
-# Telegram Bot Integration (Optional for local dev)
-TELEGRAM_BOT_TOKEN=<YOUR_TELEGRAM_BOT_TOKEN>
-TELEGRAM_ADMIN_CHAT_ID=<YOUR_TELEGRAM_ADMIN_CHAT_ID>
+# Chapa Payment Gateway Keys (Ethiopia)
+CHAPA_SECRET_KEY=CHASECK_TEST-xxxxxxxxxxxxxxxxxxxx
+CHAPA_WEBHOOK_SECRET=your_webhook_secret
 
-# Marketplace Commission Rate (e.g., 0.10 = 10%)
+# Google OAuth Credentials
+GOOGLE_CLIENT_ID=your_google_client_id.apps.googleusercontent.com
+GOOGLE_CLIENT_SECRET=your_google_client_secret
+
+# Marketplace Commission (Default: 10%)
 MARKETPLACE_COMMISSION_RATE=0.10
 ```
 
-### 🌐 Frontend Client (`client/.env`)
+---
 
-```env
-# API Backend Base URL
-VITE_API_URL=http://localhost:5000/api/v1
-```
+## 📡 API Architecture & Endpoints
 
-### 🤖 Telegram Bot (`bot/.env`)
+All endpoints are mounted under `/api/v1`:
 
-```env
-TELEGRAM_BOT_TOKEN=<YOUR_TELEGRAM_BOT_TOKEN>
-MARKETPLACE_API_URL=http://localhost:5000/api/v1
-STAFF_EMAIL=staff.finance@marketplace.com
-STAFF_PASSWORD=<YOUR_STAFF_ACCOUNT_PASSWORD>
-```
+| Route Prefix | Method | Endpoint | Description | Auth Required |
+|---|:---:|---|---|:---:|
+| **Auth** | `POST` | `/auth/register` | Register new account (Buyer/Seller) | No |
+| | `POST` | `/auth/login` | Authenticate with Username/Email | No |
+| | `POST` | `/auth/google` | Sign in / Sign up with Google OAuth | No |
+| | `GET` | `/auth/me` | Get current authenticated user profile | Yes |
+| | `POST` | `/auth/avatar` | Upload profile image (Base64/Multipart) | Yes |
+| **Products** | `GET` | `/products` | Browse public approved materials | No |
+| | `GET` | `/products/map-locations` | Get 30+ geocoded depot & seller pins | No |
+| | `POST` | `/products` | Seller creates new material listing | Seller |
+| **Cart** | `GET` | `/cart` | Retrieve user-isolated shopping cart | Buyer |
+| | `POST` | `/cart` | Add material to cart with stock validation | Buyer |
+| **Orders** | `POST` | `/orders/estimate-delivery-fee` | Dynamic Adama delivery calculator | No |
+| | `POST` | `/orders/checkout` | Place order with Chapa / Bank transfer | Buyer |
+| | `GET` | `/orders/my-orders` | List user's orders | Buyer / Seller |
+| | `GET` | `/orders/:id/track` | Live delivery status & milestone timeline | Authenticated |
+| **Payments** | `GET` | `/payments/verify-online/:orderId` | Verify Chapa online transaction | Buyer |
+| | `POST` | `/payments/submit-receipt` | Submit CBE bank transfer proof | Buyer |
+| | `POST` | `/payments/verify-manual` | Staff approves bank transfer receipt | Staff / Admin |
+| **Notifications**| `GET` | `/notifications` | List user in-app notifications | Authenticated |
+| | `PATCH`| `/notifications/read-all` | Mark all user notifications as read | Authenticated |
 
 ---
 
-## 🚀 Local Development Quickstart
+## 🛡️ Security & Data Isolation
 
-### Prerequisites
-* **Node.js** v18.0.0 or higher
-* **npm** v9.0.0 or higher
-* **Python** 3.10+ (for running the Telegram bot)
-* **MongoDB** (Local instance or free MongoDB Atlas cluster)
-
----
-
-### Step 1: Clone Repository
-```bash
-git clone https://github.com/petrossisay1646/AdamaMaterials-E-commerce-.git
-cd AdamaMaterials-E-commerce-
-```
-
-### Step 2: Set Up Backend
-```bash
-cd server
-npm install
-cp .env.example .env   # Configure your environment variables
-
-# Seed sample categories, realistic used materials, and demo accounts
-npm run seed
-
-# Run automated tests
-npm test
-
-# Start development server
-npm run dev
-```
-The backend server will run on `http://localhost:5000`.
+1. **Password Safety**: Password hashes are strictly omitted from Mongoose queries via `select: false` and hashed with `bcryptjs` (12 salt rounds).
+2. **Buyer Isolation**: Cart, orders, and profile records are strictly queried using `req.user._id` ensuring zero cross-tenant contamination.
+3. **Seller Data Isolation**: Sellers can only view and manage orders and inventory items that belong to their seller account.
+4. **Idempotent Webhooks**: All payment webhooks verify HMAC-SHA256 signatures and check for already-completed transactions before updating order state.
 
 ---
 
-### Step 3: Set Up Frontend
-```bash
-cd ../client
-npm install
+## 🌿 Team Git Branching Workflow
 
-# Start Vite development server
-npm run dev
-```
-The client application will run on `http://localhost:5173`.
-
----
-
-### Step 4: (Optional) Run Telegram Bot
-```bash
-cd ../bot
-pip install requests
-python telegram_verifier_bot.py
-```
-
----
-
-## 🧪 Automated Testing
-
-The backend includes a comprehensive integration test suite verifying auth boundaries, multi-seller payouts, payment idempotency, state transitions, and role protections.
-
-```bash
-cd server
-npm test
-```
-
-```
-▶ Full Integration Test Suite
-  ✔ Auth: Unauthenticated request is rejected
-  ✔ Auth: Buyer cannot access admin dashboard
-  ✔ Auth: Staff cannot access admin-only audit logs
-  ✔ Products: Draft products are hidden from public catalog
-  ✔ Checkout: Creates multi-seller order with per-seller payouts
-  ✔ Checkout: Stock is decremented after checkout
-  ✔ Payment: Mock webhook processes payment and confirms order
-  ✔ Payment: Webhook is idempotent (duplicate call is ignored)
-  ✔ Delivery: Record is created after payment confirmation
-  ✔ Delivery: Staff updates status to DELIVERED — payouts become ELIGIBLE
-  ✔ Payout: Seller can see their own payouts
-  ✔ State machine: Cannot cancel a DELIVERED order
-...
-ℹ tests 32 | pass 32 | fail 0 (100% passing)
-```
-
----
-
-## 👥 Default Demo Credentials (from Seed)
-
-| Role | Email | Default Password | Permissions |
-|---|---|---|---|
-| **Admin** | `admin@marketplace.com` | `AdminPass123` | Full Administrative & Finance Access |
-| **Staff (Finance)** | `staff.finance@marketplace.com` | `StaffPass123` | `VIEW_ORDERS`, `VERIFY_PAYMENTS`, `PROCESS_PAYOUTS` |
-| **Staff (Logistics)** | `staff.logistics@marketplace.com` | `StaffPass123` | `VIEW_ORDERS`, `MANAGE_DELIVERIES`, `SET_DELIVERY_FEES` |
-| **Seller** | `seller1@marketplace.com` | `SellerPass123` | Product Management, Payouts |
-| **Buyer** | `buyer1@marketplace.com` | `BuyerPass123` | Cart, Checkout, Order Tracking |
-
----
-
-## 🌐 Production Deployment Overview
-
-### 1. Backend on Render
-* **Root Directory**: `server`
-* **Build Command**: `npm install`
-* **Start Command**: `node src/server.js`
-* Add required environment variables (`NODE_ENV=production`, `MONGO_URI`, `JWT_SECRET`, `CLIENT_URL`).
-
-### 2. Frontend on Vercel
-* **Root Directory**: `client`
-* **Framework Preset**: `Vite`
-* Set `VITE_API_URL` to your live Render backend URL (`https://<your-backend>.onrender.com/api/v1`).
-
-### 3. Telegram Bot on Railway / VPS
-* **Root Directory**: `bot`
-* **Start Command**: `python telegram_verifier_bot.py`
-* Set `TELEGRAM_BOT_TOKEN`, `MARKETPLACE_API_URL`, and staff credentials.
-
----
-
-## 📜 License
-This project is licensed under the **MIT License**.
-Distributed with love for the local circular economy in Adama City, Ethiopia. 🇪🇹
+We enforce a structured Git branching strategy:
+- `main` — Production release branch. All code must pass automated CI checks.
+- `develop` — Main team integration branch.
+- Feature branches must follow the naming standard:
+  - `feature/web-auth`
+  - `feature/web-marketplace`
+  - `feature/backend-orders`
+  - `feature/backend-payment`

@@ -709,7 +709,7 @@ const seedData = async (isImported = false) => {
         materialType: woodMat._id,
         condition: 'Good',
         images: [
-          'https://images.unsplash.com/photo-1595079676339-1534801ad6cf?w=600&auto=format&fit=crop&q=80',
+          'https://images.unsplash.com/photo-1742203900461-d822f8e7fd30?w=600&auto=format&fit=crop&q=60&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxzZWFyY2h8MjZ8fFVzYWJsZSUyMFBpbmUlMjBXb29kJTIwUGFsbGV0c3xlbnwwfHwwfHx8MA%3D%3D',
         ],
         seller: seller1._id,
         approvalStatus: 'APPROVED',
@@ -728,7 +728,7 @@ const seedData = async (isImported = false) => {
         materialType: metalMat._id,
         condition: 'Like New',
         images: [
-          'https://images.unsplash.com/photo-1595515106969-1ce29566ff1c?w=600&auto=format&fit=crop&q=80',
+          'https://images.unsplash.com/photo-1613043547213-cf19e438093c?w=600&auto=format&fit=crop&q=60&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxzZWFyY2h8NTZ8fEhlYXZ5JTIwRHV0eSUyME1ldGFsJTIwRmlsaW5nJTIwQ2FiaW5ldHxlbnwwfHwwfHx8MA%3D%3D',
         ],
         seller: seller1._id,
         approvalStatus: 'APPROVED',
@@ -747,7 +747,7 @@ const seedData = async (isImported = false) => {
         materialType: woodMat._id,
         condition: 'Good',
         images: [
-          'https://images.unsplash.com/photo-1518455027359-f3f8164ba6bd?w=600&auto=format&fit=crop&q=80',
+          'https://images.unsplash.com/photo-1646705193406-8083b661ee9d?w=600&auto=format&fit=crop&q=60&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxzZWFyY2h8MTh8fFVzZWQlMjBTb2xpZCUyMFdvb2QlMjBPZmZpY2UlMjBEZXNrfGVufDB8fDB8fHww',
         ],
         seller: seller1._id,
         approvalStatus: 'APPROVED',
@@ -766,7 +766,7 @@ const seedData = async (isImported = false) => {
         materialType: mixedMat._id,
         condition: 'Good',
         images: [
-          'https://images.unsplash.com/photo-1580481077197-0245e998e3b1?w=600&auto=format&fit=crop&q=80',
+          'https://plus.unsplash.com/premium_photo-1734029815108-169d085ca9aa?w=600&auto=format&fit=crop&q=60&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxzZWFyY2h8MXx8VXNlZCUyMEVyZ29ub21pYyUyME1lc2glMjBTd2l2ZWwlMjBDaGFpcnxlbnwwfHwwfHx8MA%3D%3D',
         ],
         seller: seller1._id,
         approvalStatus: 'APPROVED',
@@ -785,7 +785,7 @@ const seedData = async (isImported = false) => {
         materialType: woodMat._id,
         condition: 'Good',
         images: [
-          'https://images.unsplash.com/photo-1615066390971-03e4e1c36ddf?w=600&auto=format&fit=crop&q=80',
+          'https://media.istockphoto.com/id/181890184/photo/old-chairs-and-table.webp?a=1&b=1&s=612x612&w=0&k=20&c=8hIQdK-0fikqqo2jXy6mtpqQVDNxOpLJipt81L64YWc=',
         ],
         seller: seller1._id,
         approvalStatus: 'APPROVED',
@@ -825,7 +825,7 @@ const seedData = async (isImported = false) => {
         materialType: electroMat._id,
         condition: 'Good',
         images: [
-          'https://images.unsplash.com/photo-1511707171634-5f897ff02aa9?w=600&auto=format&fit=crop&q=80',
+          'https://images.unsplash.com/photo-1767116188130-6077d5c4e990?w=600&auto=format&fit=crop&q=60&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxzZWFyY2h8M3x8VXNlZCUyMFNhbXN1bmclMjBHYWxheHklMjBBMzIlMjAoMTI4R0IlMjAtJTIwQmxhY2spfGVufDB8fDB8fHww',
         ],
         seller: seller1._id,
         approvalStatus: 'APPROVED',
@@ -903,7 +903,7 @@ const seedData = async (isImported = false) => {
         materialType: plasticMat._id,
         condition: 'Good',
         images: [
-          'https://images.unsplash.com/photo-1584473457406-6240486418e9?w=600&auto=format&fit=crop&q=80',
+          'https://media.istockphoto.com/id/808824306/photo/blue-barrels-storage-drums.jpg?s=612x612&w=0&k=20&c=5JVi-CYiBdDz5fLc75QXIdIj3xqcDOi-XyyIBiv9br8=',
         ],
         seller: seller4._id,
         approvalStatus: 'APPROVED',
@@ -922,7 +922,7 @@ const seedData = async (isImported = false) => {
         materialType: plasticMat._id,
         condition: 'Good',
         images: [
-          'https://images.unsplash.com/photo-1586528116311-ad8dd3c8310d?w=600&auto=format&fit=crop&q=80',
+          'https://images.unsplash.com/photo-1588595422102-da26a1cb48c6?w=600&auto=format&fit=crop&q=60&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxzZWFyY2h8OHx8VXNlZCUyMEluZHVzdHJpYWwlMjBQbGFzdGljJTIwQ3JhdGVzJTIwKFBhY2slMjBvZiUyMDYpfGVufDB8fDB8fHww',
         ],
         seller: seller4._id,
         approvalStatus: 'APPROVED',
@@ -943,7 +943,7 @@ const seedData = async (isImported = false) => {
         materialType: metalMat._id,
         condition: 'Used',
         images: [
-          'https://images.unsplash.com/photo-1530982011887-3cc11cc85693?w=600&auto=format&fit=crop&q=80',
+          'https://images.unsplash.com/photo-1763950865631-4ca11bebe017?w=600&auto=format&fit=crop&q=60&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxzZWFyY2h8Mjd8fFNjcmFwJTIwQ2FzdCUyMElyb24lMjBQaXBlcyUyMCUyNiUyMFN0cnVjdHVyYWwlMjBBbmdsZXMlMjAoQXBwcm94LiUyMDQ1a2cpfGVufDB8fDB8fHww',
         ],
         seller: seller3._id,
         approvalStatus: 'APPROVED',
@@ -962,7 +962,7 @@ const seedData = async (isImported = false) => {
         materialType: metalMat._id,
         condition: 'Used',
         images: [
-          'https://images.unsplash.com/photo-1535813547-99c456a41d4a?w=600&auto=format&fit=crop&q=80',
+          'https://images.unsplash.com/photo-1763771420746-c75fefab51b5?w=600&auto=format&fit=crop&q=60&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxzZWFyY2h8NHx8U2NyYXAlMjBJcm9uJTIwUmViYXIlMjAlMjYlMjBTdGVlbCUyMFJvZCUyMEN1dG9mZnMlMjAoQnVuZGxlJTIwb2YlMjAyNSl8ZW58MHx8MHx8fDA%3D',
         ],
         seller: seller3._id,
         approvalStatus: 'APPROVED',
@@ -981,7 +981,7 @@ const seedData = async (isImported = false) => {
         materialType: metalMat._id,
         condition: 'Used',
         images: [
-          'https://images.unsplash.com/photo-1558494949-ef010cbdcc31?w=600&auto=format&fit=crop&q=80',
+          'https://media.istockphoto.com/id/1835566623/photo/a-bunch-of-old-copper-cables-in-a-plastic-sheath-front-view.webp?a=1&b=1&s=612x612&w=0&k=20&c=IKkR2TYv-Sx9yTY9Nl0yv8dIJz95GfuN517_3NcDgqc=',
         ],
         seller: seller3._id,
         approvalStatus: 'APPROVED',
@@ -1000,7 +1000,7 @@ const seedData = async (isImported = false) => {
         materialType: metalMat._id,
         condition: 'Fair',
         images: [
-          'https://images.unsplash.com/photo-1513694203232-719a280e022f?w=600&auto=format&fit=crop&q=80',
+          'https://media.istockphoto.com/id/2288771591/photo/roofing-material-for-houses-building-material.jpg?s=612x612&w=0&k=20&c=glEHkYk621Xs-31oKdIURDlQWBvNO5TzUFLwMNBTnJM=',
         ],
         seller: seller3._id,
         approvalStatus: 'APPROVED',
@@ -1040,7 +1040,7 @@ const seedData = async (isImported = false) => {
         materialType: woodMat._id,
         condition: 'Good',
         images: [
-          'https://images.unsplash.com/photo-1594633312681-425c7b97ccd1?w=600&auto=format&fit=crop&q=80',
+          'https://images.unsplash.com/photo-1675241816662-faab5f4c3f88?w=600&auto=format&fit=crop&q=60&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxzZWFyY2h8MTJ8fFVzZWQlMjA1LVRpZXIlMjBTb2xpZCUyMFdvb2QlMjBCb29rc2hlbGZ8ZW58MHx8MHx8fDA%3D',
         ],
         seller: seller5._id,
         approvalStatus: 'APPROVED',
@@ -1059,7 +1059,7 @@ const seedData = async (isImported = false) => {
         materialType: mixedMat._id,
         condition: 'Like New',
         images: [
-          'https://images.unsplash.com/photo-1533779283484-84e1d70a1a5b?w=600&auto=format&fit=crop&q=80',
+          'https://media.istockphoto.com/id/1034892940/photo/modern-glass-table-in-the-loft-interior.webp?a=1&b=1&s=612x612&w=0&k=20&c=S9VhLxdmRxgOoN04RzjwFkgB4-sl8vwAv5CvNWdimO8=',
         ],
         seller: seller5._id,
         approvalStatus: 'APPROVED',
@@ -1080,7 +1080,7 @@ const seedData = async (isImported = false) => {
         materialType: electroMat._id,
         condition: 'Good',
         images: [
-          'https://images.unsplash.com/photo-1581092160607-ee22621dd758?w=600&auto=format&fit=crop&q=80',
+          'https://media.istockphoto.com/id/939597574/photo/the-group-pumps-at-the-water-pipe.webp?a=1&b=1&s=612x612&w=0&k=20&c=JS8bOn5XufjQMuwIZbShp6_ceWz09ZK2UoShiYmZtO4=',
         ],
         seller: seller6._id,
         approvalStatus: 'APPROVED',
@@ -1118,7 +1118,7 @@ const seedData = async (isImported = false) => {
         materialType: electroMat._id,
         condition: 'Good',
         images: [
-          'https://images.unsplash.com/photo-1510557880182-3d4d3cba35a5?w=600&auto=format&fit=crop&q=80',
+          'https://images.unsplash.com/photo-1726574778294-adfb9ee2e5ca?w=600&auto=format&fit=crop&q=60&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxzZWFyY2h8MjB8fFVzZWQlMjBBcHBsZSUyMGlQaG9uZSUyMDExJTIwKDY0R0IlMjAtJTIwV2hpdGUpfGVufDB8fDB8fHww',
         ],
         seller: seller1._id,
         approvalStatus: 'APPROVED',
@@ -1158,7 +1158,7 @@ const seedData = async (isImported = false) => {
         materialType: plasticMat._id,
         condition: 'Good',
         images: [
-          'https://images.unsplash.com/photo-1578575437130-527eed3abbec?w=600&auto=format&fit=crop&q=80',
+          'https://images.unsplash.com/photo-1734510722516-5a558dc910d2?w=600&auto=format&fit=crop&q=60&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxzZWFyY2h8N3x8VXNlZCUyMEhlYXZ5LUR1dHklMjBQbGFzdGljJTIwUGFsbGV0cyUyMCgxMjB4MTAwY20lMjAtJTIwU3RhY2slMjBvZiUyMDMpfGVufDB8fDB8fHww',
         ],
         seller: seller1._id,
         approvalStatus: 'APPROVED',
@@ -1179,7 +1179,7 @@ const seedData = async (isImported = false) => {
         materialType: metalMat._id,
         condition: 'Used',
         images: [
-          'https://images.unsplash.com/photo-1541888946425-d0fbb18086f6?w=600&auto=format&fit=crop&q=80',
+          'https://media.istockphoto.com/id/2240733264/photo/steel-piled-together.webp?a=1&b=1&s=612x612&w=0&k=20&c=bd4EG8mXS43efd3lhXqi7b8fV3IWIR_HbKUSQsgtI9s=',
         ],
         seller: seller1._id,
         approvalStatus: 'APPROVED',
@@ -1198,7 +1198,7 @@ const seedData = async (isImported = false) => {
         materialType: metalMat._id,
         condition: 'Good',
         images: [
-          'https://images.unsplash.com/photo-1590402494587-44b71d7772f6?w=600&auto=format&fit=crop&q=80',
+          'https://plus.unsplash.com/premium_photo-1676033369759-7d4b854c0512?w=600&auto=format&fit=crop&q=60&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxzZWFyY2h8MXx8VXNlZCUyMFNvbGlkJTIwSXJvbiUyMFNlY3VyaXR5JTIwV2luZG93JTIwR3JpbGxlc3xlbnwwfHwwfHx8MA%3D%3D',
         ],
         seller: seller1._id,
         approvalStatus: 'APPROVED',
@@ -1217,7 +1217,7 @@ const seedData = async (isImported = false) => {
         materialType: metalMat._id,
         condition: 'Good',
         images: [
-          'https://images.unsplash.com/photo-1619642751034-765dfdf7c58e?w=600&auto=format&fit=crop&q=80',
+          'https://images.unsplash.com/photo-1676337167385-fa7a8d1eac07?w=600&auto=format&fit=crop&q=60&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxzZWFyY2h8MjB8fFVzZWQlMjAxMlYlMjA3NUFoJTIwSGVhdnklMjBEdXR5JTIwQXV0b21vdGl2ZSUyMEJhdHRlcnl8ZW58MHx8MHx8fDA%3D',
         ],
         seller: seller1._id,
         approvalStatus: 'APPROVED',
@@ -1238,7 +1238,7 @@ const seedData = async (isImported = false) => {
         materialType: electroMat._id,
         condition: 'Good',
         images: [
-          'https://images.unsplash.com/photo-1584992236310-6edddc08acff?w=600&auto=format&fit=crop&q=80',
+          'https://images.unsplash.com/photo-1585659722983-3a675dabf23d?w=600&auto=format&fit=crop&q=60&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxzZWFyY2h8Mnx8VXNlZCUyMENvbW1lcmNpYWwlMjBNaWNyb3dhdmUlMjBPdmVufGVufDB8fDB8fHww',
         ],
         seller: seller1._id,
         approvalStatus: 'APPROVED',
@@ -1257,7 +1257,7 @@ const seedData = async (isImported = false) => {
         materialType: woodMat._id,
         condition: 'Good',
         images: [
-          'https://images.unsplash.com/photo-1546484396-fb3fc6f95f98?w=600&auto=format&fit=crop&q=80',
+          'https://media.istockphoto.com/id/2167285206/photo/edged-boards-building-material-the-material-is-made-of-wood.webp?a=1&b=1&s=612x612&w=0&k=20&c=CtC8QZWzjv4oEgBvayYP22bZj_GR5KMVUJ__v5FMkbQ=',
         ],
         seller: seller5._id,
         approvalStatus: 'APPROVED',
@@ -1276,7 +1276,7 @@ const seedData = async (isImported = false) => {
         materialType: mixedMat._id,
         condition: 'Good',
         images: [
-          'https://images.unsplash.com/photo-1590069261209-f8e9b8642343?w=600&auto=format&fit=crop&q=80',
+          'https://images.unsplash.com/photo-1559322575-2f4e66131d55?w=600&auto=format&fit=crop&q=60&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxzZWFyY2h8M3x8Q2xlYW5lZCUyMERlbW9saXRpb24lMjBSZWQlMjBDbGF5JTIwQnJpY2tzJTIwKFBhY2slMjBvZiUyMDE1MCUyMFBjcyl8ZW58MHx8MHx8fDA%3D',
         ],
         seller: seller3._id,
         approvalStatus: 'APPROVED',
@@ -1295,7 +1295,7 @@ const seedData = async (isImported = false) => {
         materialType: metalMat._id,
         condition: 'Good',
         images: [
-          'https://images.unsplash.com/photo-1509644851169-2acc08aa25b5?w=600&auto=format&fit=crop&q=80',
+          'https://images.unsplash.com/photo-1719067720887-b55ecfdd21b2?w=600&auto=format&fit=crop&q=60&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1yZWxhdGVkfDEzfHx8ZW58MHx8fHx8',
         ],
         seller: seller1._id,
         approvalStatus: 'APPROVED',
@@ -1314,7 +1314,7 @@ const seedData = async (isImported = false) => {
         materialType: metalMat._id,
         condition: 'Used',
         images: [
-          'https://images.unsplash.com/photo-1580273916550-e323be2ae537?w=600&auto=format&fit=crop&q=80',
+          'https://images.unsplash.com/photo-1712045412870-e486f0bf93b2?w=600&auto=format&fit=crop&q=60&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxzZWFyY2h8MTB8fEhlYXZ5JTIwU2NyYXAlMjBWZWhpY2xlJTIwTGVhZiUyMFNwcmluZ3MlMjAlMjYlMjBBeGxlcyUyMChBcHByb3glMjA3MGtnKXxlbnwwfHwwfHx8MA%3D%3D',
         ],
         seller: seller6._id,
         approvalStatus: 'APPROVED',
@@ -1333,7 +1333,7 @@ const seedData = async (isImported = false) => {
         materialType: paperMat._id,
         condition: 'Fair',
         images: [
-          'https://images.unsplash.com/photo-1544716278-ca5e3f4abd8c?w=600&auto=format&fit=crop&q=80',
+          'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTT5O62YE3VZJLL6IEpEaxm60ajvi-BtKqeDgaeMeyAWQ&s',
         ],
         seller: seller2._id,
         approvalStatus: 'PENDING_APPROVAL',
