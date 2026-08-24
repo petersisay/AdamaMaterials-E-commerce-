@@ -844,7 +844,7 @@ const seedData = async (isImported = false) => {
         materialType: electroMat._id,
         condition: 'Good',
         images: [
-          'https://images.unsplash.com/photo-1593359677879-a4bb92f829d1?w=600&auto=format&fit=crop&q=80',
+          'https://plus.unsplash.com/premium_photo-1683121217848-44dde7d393e6?q=80&w=1074&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D',
         ],
         seller: seller2._id,
         approvalStatus: 'APPROVED',

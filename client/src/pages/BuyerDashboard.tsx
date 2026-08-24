@@ -402,7 +402,7 @@ const BuyerDashboard: React.FC = () => {
                   <div key={item._id} className="py-3.5 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
                     <div className="flex gap-3">
                       <div className="w-12 h-12 border border-slate-200 rounded-lg overflow-hidden bg-slate-50 flex-shrink-0">
-                        <img src={item.product?.images?.[0] || 'https://images.unsplash.com/photo-1595079676339-1534801ad6cf?w=500&auto=format&fit=crop&q=60'} alt="" className="w-full h-full object-cover" />
+                        <img src={item.product?.images?.[0] || 'https://images.unsplash.com/photo-1742203900461-d822f8e7fd30?w=500&auto=format&fit=crop&q=60'} alt="" className="w-full h-full object-cover" />
                       </div>
                       <div>
                         <div className="font-semibold text-slate-800 text-xs">{item.name}</div>

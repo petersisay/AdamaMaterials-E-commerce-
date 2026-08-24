@@ -1,4 +1,4 @@
-﻿const mongoose = require('mongoose');
+const mongoose = require('mongoose');
 const seedData = require('../jobs/seed');
 
 const cleanseProductImagesInDatabase = async () => {
@@ -34,6 +34,7 @@ const cleanseProductImagesInDatabase = async () => {
       'Used Heavy-Duty Plastic Pallets (120x100cm - Stack of 3)': 'https://images.unsplash.com/photo-1734510722516-5a558dc910d2?w=600&auto=format&fit=crop&q=60&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxzZWFyY2h8N3x8VXNlZCUyMEhlYXZ5LUR1dHklMjBQbGFzdGljJTIwUGFsbGV0cyUyMCgxMjB4MTAwY20lMjAtJTIwU3RhY2slMjBvZiUyMDMpfGVufDB8fDB8fHww',
       'Scrap Structural Steel I-Beam Cutoffs (Total ~55kg)': 'https://media.istockphoto.com/id/2240733264/photo/steel-piled-together.webp?a=1&b=1&s=612x612&w=0&k=20&c=bd4EG8mXS43efd3lhXqi7b8fV3IWIR_HbKUSQsgtI9s=',
       'Used Solid Iron Security Window Grilles (Set of 3)': 'https://plus.unsplash.com/premium_photo-1676033369759-7d4b854c0512?w=600&auto=format&fit=crop&q=60&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxzZWFyY2h8MXx8VXNlZCUyMFNvbGlkJTIwSXJvbiUyMFNlY3VyaXR5JTIwV2luZG93JTIwR3JpbGxlc3xlbnwwfHwwfHx8MA%3D%3D',
+      'Used 12V 75Ah Heavy Duty Automotive Battery': 'https://images.unsplash.com/photo-1676337167385-fa7a8d1eac07?w=600&auto=format&fit=crop&q=60&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxzZWFyY2h8MjB8fFVzZWQlMjAxMlYlMjA3NUFoJTIwSGVhdnklMjBEdXR5JTIwQXV0b21vdGl2ZSUyMEJhdHRlcnl8ZW58MHx8MHx8fDA%3D',
       'Used 12V 100Ah Heavy Duty Automotive Battery': 'https://images.unsplash.com/photo-1676337167385-fa7a8d1eac07?w=600&auto=format&fit=crop&q=60&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxzZWFyY2h8MjB8fFVzZWQlMjAxMlYlMjA3NUFoJTIwSGVhdnklMjBEdXR5JTIwQXV0b21vdGl2ZSUyMEJhdHRlcnl8ZW58MHx8MHx8fDA%3D',
       'Used Commercial Microwave Oven (LG 30L Stainless Steel)': 'https://images.unsplash.com/photo-1585659722983-3a675dabf23d?w=600&auto=format&fit=crop&q=60&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxzZWFyY2h8Mnx8VXNlZCUyMENvbW1lcmNpYWwlMjBNaWNyb3dhdmUlMjBPdmVufGVufDB8fDB8fHww',
       'Reclaimed Construction Hardwood Timber Beams & Joists': 'https://media.istockphoto.com/id/2167285206/photo/edged-boards-building-material-the-material-is-made-of-wood.webp?a=1&b=1&s=612x612&w=0&k=20&c=CtC8QZWzjv4oEgBvayYP22bZj_GR5KMVUJ__v5FMkbQ=',
@@ -73,7 +74,7 @@ const cleanseProductImagesInDatabase = async () => {
         await p.save({ validateBeforeSave: false });
       }
     }
-    console.log(✅ Applied exact verified material imagery to  + products.length +  products in DB.);
+    console.log(`✅ Applied exact verified material imagery to ${products.length} products in DB.`);
   } catch (err) {
     console.warn('Product image cleanse note:', err.message);
   }
@@ -83,7 +84,7 @@ const connectDB = async () => {
   const dbUri = process.env.MONGO_URI || 'mongodb://127.0.0.1:27017/managed-marketplace';
 
   try {
-    console.log(Connecting to primary MongoDB URI:  + dbUri + ... 💾);
+    console.log(`Connecting to primary MongoDB URI: ${dbUri}... 💾`);
     await mongoose.connect(dbUri, {
       serverSelectionTimeoutMS: 5000,
     });
@@ -113,7 +114,7 @@ const connectDB = async () => {
       const mongoServer = await MongoMemoryServer.create();
       const memoryUri = mongoServer.getUri();
 
-      console.log(Memory MongoDB Server started at:  + memoryUri);
+      console.log(`Memory MongoDB Server started at: ${memoryUri}`);
       await mongoose.connect(memoryUri);
       console.log('Connected to in-memory MongoDB server successfully! 🚀');
 

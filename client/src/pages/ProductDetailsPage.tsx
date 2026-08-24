@@ -110,13 +110,13 @@ const ProductDetailsPage: React.FC = () => {
         <div className="lg:col-span-7 space-y-4">
           <div className="aspect-square bg-slate-100 rounded-2xl border border-slate-200 overflow-hidden relative">
             <img 
-              src={activeImage || 'https://images.unsplash.com/photo-1595079676339-1534801ad6cf?w=600&auto=format&fit=crop&q=80'} 
+              src={activeImage || 'https://images.unsplash.com/photo-1742203900461-d822f8e7fd30?w=600&auto=format&fit=crop&q=80'} 
               alt={product.name} 
               className="w-full h-full object-cover"
               onError={(e) => {
                 const target = e.currentTarget;
                 target.onerror = null;
-                target.src = 'https://images.unsplash.com/photo-1595079676339-1534801ad6cf?w=600&auto=format&fit=crop&q=80';
+                target.src = 'https://images.unsplash.com/photo-1742203900461-d822f8e7fd30?w=600&auto=format&fit=crop&q=80';
               }}
             />
             {product.quantity === 0 && (
@@ -141,7 +141,7 @@ const ProductDetailsPage: React.FC = () => {
                     onError={(e) => {
                       const target = e.currentTarget;
                       target.onerror = null;
-                      target.src = 'https://images.unsplash.com/photo-1595079676339-1534801ad6cf?w=600&auto=format&fit=crop&q=80';
+                      target.src = 'https://images.unsplash.com/photo-1742203900461-d822f8e7fd30?w=600&auto=format&fit=crop&q=80';
                     }}
                   />
                 </button>
