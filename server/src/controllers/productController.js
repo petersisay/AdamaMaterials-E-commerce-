@@ -260,7 +260,7 @@ exports.createProduct = asyncHandler(async (req, res, next) => {
     condition,
     images,
     seller: req.user._id,
-    approvalStatus: 'APPROVED',
+    approvalStatus: (req.user && req.user.role === 'ADMIN' && req.body.approvalStatus) ? req.body.approvalStatus : 'DRAFT',
     location: location || { subCity: 'Adama Kebele 04', city: 'Adama' },
   });
 
