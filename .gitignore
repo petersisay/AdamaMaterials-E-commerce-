@@ -9,14 +9,18 @@ build/
 client/dist/
 .vite/
 
-# Local environment files (preserve .env.example)
+# Local environment and secret files (preserve .env.example)
 .env
-.env.local
-.env.development.local
-.env.test.local
-.env.production.local
+.env.*
+*.env
 server/.env
 client/.env
+bot/.env
+client_secret*.json
+credentials.json
+*.pem
+*.key
+*.cert
 
 # Temporary artifacts & zip archives
 *.zip
