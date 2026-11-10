@@ -34,8 +34,8 @@ A standalone Python Telegram Bot for **Marketplace Staff & Admins** to verify ba
 ```powershell
 $env:TELEGRAM_BOT_TOKEN="YOUR_TELEGRAM_BOT_TOKEN_HERE"
 $env:MARKETPLACE_API_URL="http://localhost:5000/api/v1"
-$env:STAFF_EMAIL="your_staff_email@domain.com"
-$env:STAFF_PASSWORD="YOUR_STAFF_PASSWORD_HERE"
+$env:STAFF_EMAIL="staff.finance@marketplace.com"
+$env:STAFF_PASSWORD="StaffPass123"
 
 python bot/telegram_verifier_bot.py
 ```
@@ -44,8 +44,8 @@ python bot/telegram_verifier_bot.py
 ```bash
 export TELEGRAM_BOT_TOKEN="YOUR_TELEGRAM_BOT_TOKEN_HERE"
 export MARKETPLACE_API_URL="http://localhost:5000/api/v1"
-export STAFF_EMAIL="your_staff_email@domain.com"
-export STAFF_PASSWORD="YOUR_STAFF_PASSWORD_HERE"
+export STAFF_EMAIL="staff.finance@marketplace.com"
+export STAFF_PASSWORD="StaffPass123"
 
 python bot/telegram_verifier_bot.py
 ```

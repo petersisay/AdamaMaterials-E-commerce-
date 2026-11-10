@@ -223,7 +223,7 @@ PORT=5000
 MONGODB_URI=mongodb://localhost:27017/revola_marketplace
 
 # JWT Credentials
-JWT_SECRET=your_jwt_secret_key_here
+JWT_SECRET=your_super_secret_jwt_key_here
 JWT_EXPIRE=30d
 COOKIE_EXPIRE=30
 
@@ -231,12 +231,12 @@ COOKIE_EXPIRE=30
 CLIENT_URL=http://localhost:5173
 
 # Chapa Payment Gateway Keys (Ethiopia)
-CHAPA_SECRET_KEY=your_chapa_secret_key_here
-CHAPA_WEBHOOK_SECRET=your_chapa_webhook_secret_here
+CHAPA_SECRET_KEY=CHASECK_TEST-xxxxxxxxxxxxxxxxxxxx
+CHAPA_WEBHOOK_SECRET=your_webhook_secret
 
 # Google OAuth Credentials
-GOOGLE_CLIENT_ID=your_google_client_id_here
-GOOGLE_CLIENT_SECRET=your_google_client_secret_here
+GOOGLE_CLIENT_ID=your_google_client_id.apps.googleusercontent.com
+GOOGLE_CLIENT_SECRET=your_google_client_secret
 
 # Marketplace Commission (Default: 10%)
 MARKETPLACE_COMMISSION_RATE=0.10
