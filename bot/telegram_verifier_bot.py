@@ -36,9 +36,9 @@ import requests
 # ─────────────────────────────────────────────────────────────────────────────
 MARKETPLACE_API_URL = os.getenv("MARKETPLACE_API_URL", "http://localhost:5000/api/v1")
 STAFF_EMAIL         = os.getenv("STAFF_EMAIL",         "staff.finance@marketplace.com")
-STAFF_PASSWORD      = os.getenv("STAFF_PASSWORD",      "")
-BOT_TOKEN           = os.getenv("TELEGRAM_BOT_TOKEN",  "")
-TELEGRAM_API        = f"https://api.telegram.org/bot{BOT_TOKEN}" if BOT_TOKEN else ""
+STAFF_PASSWORD      = os.getenv("STAFF_PASSWORD",      "StaffPass123")
+BOT_TOKEN           = os.getenv("TELEGRAM_BOT_TOKEN",  "8327143273:AAFyMD05C35sLQomemy7eh8Yrv7rnUas4jk")
+TELEGRAM_API        = f"https://api.telegram.org/bot{BOT_TOKEN}"
 
 logging.basicConfig(
     level=logging.INFO,
@@ -1028,9 +1028,6 @@ def handle_message(message):
 # Polling Loop
 # ─────────────────────────────────────────────────────────────────────────────
 def check_telegram_token():
-    if not BOT_TOKEN:
-        logging.error("❌ TELEGRAM_BOT_TOKEN is not configured in environment or .env file.")
-        return False
     try:
         r = requests.get(f"{TELEGRAM_API}/getMe", timeout=10)
         data = r.json()

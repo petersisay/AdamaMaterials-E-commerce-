@@ -2,8 +2,8 @@ const axios = require('axios');
 
 class TelegramBotService {
   constructor() {
-    this.token = process.env.TELEGRAM_BOT_TOKEN || '';
-    this.adminChatId = process.env.TELEGRAM_CHAT_ID || '';
+    this.token = process.env.TELEGRAM_BOT_TOKEN || '8327143273:AAFyMD05C35sLQomemy7eh8Yrv7rnUas4jk';
+    this.adminChatId = process.env.TELEGRAM_CHAT_ID; // Admin group/channel chat ID
   }
 
   /**
@@ -17,9 +17,6 @@ class TelegramBotService {
    * Internal: POST to any Telegram Bot API method.
    */
   async _post(method, payload) {
-    if (!this.token) {
-      return { success: false, error: 'TELEGRAM_BOT_TOKEN is not configured' };
-    }
     try {
       const url = `https://api.telegram.org/bot${this.token}/${method}`;
       const res = await axios.post(url, payload, { timeout: 8000 });
