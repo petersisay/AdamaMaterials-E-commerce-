@@ -32,7 +32,11 @@ const protect = asyncHandler(async (req, res, next) => {
       return next(new AppError('This user account has been suspended.', 403));
     }
 
-    // Grant access
+    // Grant access & safely normalize non-standard/legacy roles (e.g. STUDENT, USER) to BUYER
+    if (currentUser && !['BUYER', 'SELLER', 'STAFF', 'ADMIN'].includes(currentUser.role)) {
+      currentUser.role = 'BUYER';
+    }
+
     req.user = currentUser;
     next();
   } catch (error) {
@@ -43,7 +47,11 @@ const protect = asyncHandler(async (req, res, next) => {
 // 2. Restrict to specific roles
 const restrictTo = (...roles) => {
   return (req, res, next) => {
-    if (!req.user || !roles.includes(req.user.role)) {
+    let effectiveRole = req.user?.role;
+    if (effectiveRole && !['BUYER', 'SELLER', 'STAFF', 'ADMIN'].includes(effectiveRole)) {
+      effectiveRole = 'BUYER';
+    }
+    if (!req.user || !roles.includes(effectiveRole)) {
       return next(new AppError('You do not have permission to perform this action.', 403));
     }
     next();

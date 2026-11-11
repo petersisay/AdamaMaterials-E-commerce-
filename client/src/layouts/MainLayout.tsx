@@ -86,11 +86,10 @@ const MainLayout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   // Determine dashboard link based on role
   const getDashboardLink = () => {
     if (!user) return '/';
-    if (user.role === 'BUYER') return '/buyer-dashboard';
-    if (user.role === 'SELLER') return '/seller-dashboard';
-    if (user.role === 'STAFF') return '/staff-dashboard';
     if (user.role === 'ADMIN') return '/admin-dashboard';
-    return '/';
+    if (user.role === 'STAFF') return '/staff-dashboard';
+    if (user.role === 'SELLER') return '/seller-dashboard';
+    return '/buyer-dashboard';
   };
 
   return (
@@ -105,7 +104,7 @@ const MainLayout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
 
           {/* Desktop Nav */}
           <nav className="hidden md:flex items-center gap-6">
-            {(!user || user.role === 'BUYER' || user.role === 'SELLER') && (
+            {(!user || (user.role !== 'ADMIN' && user.role !== 'STAFF')) && (
               <Link
                 to="/products"
                 className="text-sm font-semibold text-slate-700 dark:text-slate-300 hover:text-primary-600 dark:hover:text-primary-400 transition-colors"
@@ -209,7 +208,7 @@ const MainLayout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
                   </AnimatePresence>
                 </div>
 
-                {user.role === 'BUYER' && (
+                {user.role !== 'ADMIN' && user.role !== 'STAFF' && user.role !== 'SELLER' && (
                   <Link
                     to="/cart"
                     className="p-2 text-slate-500 hover:text-primary-600 hover:bg-slate-100 rounded-full transition-all relative"
@@ -323,7 +322,7 @@ const MainLayout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
               </div>
 
               <div className="flex flex-col gap-3 flex-1 overflow-y-auto">
-                {(!user || user.role === 'BUYER' || user.role === 'SELLER') && (
+                {(!user || (user.role !== 'ADMIN' && user.role !== 'STAFF')) && (
                   <Link
                     to="/products"
                     className="text-base font-semibold text-slate-700 dark:text-slate-200 hover:text-primary-600 dark:hover:text-primary-400 py-2 border-b border-slate-100 dark:border-slate-800"
@@ -358,7 +357,7 @@ const MainLayout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
                       <LayoutDashboard className="w-5 h-5" />
                       Dashboard
                     </Link>
-                    {user.role === 'BUYER' && (
+                    {user.role !== 'ADMIN' && user.role !== 'STAFF' && user.role !== 'SELLER' && (
                       <Link
                         to="/cart"
                         className="text-base font-semibold text-slate-700 dark:text-slate-200 hover:text-primary-600 dark:hover:text-primary-400 py-2 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between"

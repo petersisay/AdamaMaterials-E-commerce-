@@ -41,7 +41,12 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children, allowedRoles,
     return <Navigate to="/login" state={{ from: location }} replace />;
   }
 
-  if (allowedRoles && !allowedRoles.includes(user.role)) {
+  // Fallback unrecognized or student roles to BUYER for shopping & dashboard permissions
+  const effectiveRole = (user.role && (['BUYER', 'SELLER', 'STAFF', 'ADMIN'] as const).includes(user.role as any))
+    ? user.role
+    : 'BUYER';
+
+  if (allowedRoles && !allowedRoles.includes(effectiveRole as any)) {
     return <Navigate to="/unauthorized" replace />;
   }
 

@@ -9,8 +9,8 @@ export interface User {
   email: string;
   avatar?: string;
   phoneNumber?: string;
-  role: 'BUYER' | 'SELLER' | 'STAFF' | 'ADMIN';
-  roles?: ('BUYER' | 'SELLER' | 'STAFF' | 'ADMIN')[];
+  role: 'BUYER' | 'SELLER' | 'STAFF' | 'ADMIN' | string;
+  roles?: ('BUYER' | 'SELLER' | 'STAFF' | 'ADMIN' | string)[];
   staffPermissions?: string[];
   isSellerApproved?: boolean;
   sellerProfile?: {
