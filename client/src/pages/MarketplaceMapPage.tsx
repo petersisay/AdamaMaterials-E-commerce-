@@ -138,17 +138,19 @@ const MarketplaceMapPage: React.FC = () => {
     try {
       setLoading(true);
       const params: any = {};
-      if (lat !== undefined && lng !== undefined) {
-        params.buyerLat = lat;
-        params.buyerLng = lng;
+      if (lat !== undefined && lng !== undefined && !isNaN(Number(lat)) && !isNaN(Number(lng))) {
+        params.buyerLat = Number(lat);
+        params.buyerLng = Number(lng);
       }
       const res = await api.get('/map/places', { params });
-      if (res.data.success) {
+      if (res.data?.success) {
         setPlaces(res.data.places || []);
       }
-    } catch (err) {
+    } catch (err: any) {
       console.error('Failed to load map data', err);
-      showToast('Could not load map places.', 'error');
+      if (err?.code !== 'ERR_CANCELED') {
+        showToast(err?.response?.data?.message || 'Could not load map places.', 'error');
+      }
     } finally {
       setLoading(false);
     }

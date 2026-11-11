@@ -16,6 +16,17 @@ const {
 exports.getMarketplaceMapData = asyncHandler(async (req, res, next) => {
   const { buyerLat, buyerLng, category, search } = req.query;
 
+  // Auto-seed demo places and sellers if database has few or no map places
+  try {
+    const mapPlaceCount = await MapPlace.countDocuments({ isActive: true });
+    if (mapPlaceCount < 5) {
+      const seedDemoPlaces = require('../jobs/seedPlaces');
+      await seedDemoPlaces();
+    }
+  } catch (seedErr) {
+    console.warn('[Map Controller] Auto-seed warning:', seedErr.message);
+  }
+
   const hasBuyerLocation =
     buyerLat !== undefined &&
     buyerLng !== undefined &&
@@ -36,24 +47,30 @@ exports.getMarketplaceMapData = asyncHandler(async (req, res, next) => {
     .select('name sellerProfile createdAt')
     .populate('sellerProfile.categoriesSold', 'name');
 
-  // Fetch product inventory counts for each seller
-  const sellerProductCounts = await Product.aggregate([
-    { $match: { approvalStatus: 'APPROVED' } },
-    { $group: { _id: '$seller', count: { $sum: 1 } } },
-  ]);
+  // Fetch product inventory counts for each seller safely
   const productCountMap = {};
-  sellerProductCounts.forEach((s) => {
-    productCountMap[s._id.toString()] = s.count;
-  });
+  try {
+    const sellerProductCounts = await Product.aggregate([
+      { $match: { approvalStatus: 'APPROVED', seller: { $ne: null } } },
+      { $group: { _id: '$seller', count: { $sum: 1 } } },
+    ]);
+    sellerProductCounts.forEach((s) => {
+      if (s && s._id) {
+        productCountMap[s._id.toString()] = s.count;
+      }
+    });
+  } catch (aggErr) {
+    console.warn('[Map Controller] Product aggregation note:', aggErr.message);
+  }
 
   const sellerMarkers = approvedSellers
     .filter((s) => {
       const coords = s.sellerProfile?.shopLocation?.coordinates;
-      return Array.isArray(coords) && coords.length === 2 && coords[0] && coords[1];
+      return Array.isArray(coords) && coords.length === 2 && coords[0] != null && coords[1] != null && !isNaN(coords[0]) && !isNaN(coords[1]);
     })
     .map((s) => {
-      const lng = s.sellerProfile.shopLocation.coordinates[0];
-      const lat = s.sellerProfile.shopLocation.coordinates[1];
+      const lng = Number(s.sellerProfile.shopLocation.coordinates[0]);
+      const lat = Number(s.sellerProfile.shopLocation.coordinates[1]);
 
       let distanceKm = null;
       if (hasBuyerLocation) {
@@ -68,7 +85,7 @@ exports.getMarketplaceMapData = asyncHandler(async (req, res, next) => {
         description: s.sellerProfile.shopDescription || 'Approved AdaMaterials Seller',
         address: s.sellerProfile.shopLocation.address || s.sellerProfile.shopAddress || 'Adama, Ethiopia',
         coordinates: [lat, lng], // Leaflet uses [lat, lng]
-        categories: (s.sellerProfile.categoriesSold || []).map((c) => c.name || c),
+        categories: (s.sellerProfile.categoriesSold || []).map((c) => c?.name || c),
         availableProductsCount: productCountMap[s._id.toString()] || 0,
         isVerified: true,
         source: 'ADAMATERIALS_MARKETPLACE',
@@ -91,30 +108,35 @@ exports.getMarketplaceMapData = asyncHandler(async (req, res, next) => {
 
   const mapPlaces = await MapPlace.find(mapPlaceFilter);
 
-  const placeMarkers = mapPlaces.map((p) => {
-    const lng = p.location.coordinates[0];
-    const lat = p.location.coordinates[1];
+  const placeMarkers = mapPlaces
+    .filter((p) => {
+      const coords = p.location?.coordinates;
+      return Array.isArray(coords) && coords.length === 2 && coords[0] != null && coords[1] != null && !isNaN(coords[0]) && !isNaN(coords[1]);
+    })
+    .map((p) => {
+      const lng = Number(p.location.coordinates[0]);
+      const lat = Number(p.location.coordinates[1]);
 
-    let distanceKm = null;
-    if (hasBuyerLocation) {
-      distanceKm = calculateDistanceKm(numBuyerLat, numBuyerLng, lat, lng);
-    }
+      let distanceKm = null;
+      if (hasBuyerLocation) {
+        distanceKm = calculateDistanceKm(numBuyerLat, numBuyerLng, lat, lng);
+      }
 
-    return {
-      id: p._id,
-      placeType: p.source === 'OSM_EXTERNAL' ? 'OSM_EXTERNAL' : 'ADMIN_MANAGED',
-      title: p.name,
-      category: p.category,
-      materials: p.materials || [],
-      description: p.description,
-      address: p.address,
-      phone: p.phone || '',
-      coordinates: [lat, lng],
-      isVerified: p.isVerified,
-      source: p.source,
-      distanceKm,
-    };
-  });
+      return {
+        id: p._id,
+        placeType: p.source === 'OSM_EXTERNAL' ? 'OSM_EXTERNAL' : 'ADMIN_MANAGED',
+        title: p.name,
+        category: p.category,
+        materials: p.materials || [],
+        description: p.description,
+        address: p.address,
+        phone: p.phone || '',
+        coordinates: [lat, lng],
+        isVerified: p.isVerified,
+        source: p.source,
+        distanceKm,
+      };
+    });
 
   // Combine and sort by distance if buyer coordinates provided
   let allPlaces = [...sellerMarkers, ...placeMarkers];
