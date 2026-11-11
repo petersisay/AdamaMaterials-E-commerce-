@@ -197,6 +197,14 @@ const MarketplaceMapPage: React.FC = () => {
         const clickedLat = Number(e.latlng.lat.toFixed(6));
         const clickedLng = Number(e.latlng.lng.toFixed(6));
         const isInside = isInsideAdamaServiceArea(clickedLat, clickedLng);
+
+        // Pause continuous GPS watcher so manual placement stays fixed
+        if (watchIdRef.current !== null) {
+          navigator.geolocation.clearWatch(watchIdRef.current);
+          watchIdRef.current = null;
+          setIsLiveTracking(false);
+        }
+
         setBuyerLocation({
           lat: clickedLat,
           lng: clickedLng,
@@ -206,9 +214,9 @@ const MarketplaceMapPage: React.FC = () => {
         });
         fetchMapPlaces(clickedLat, clickedLng);
         if (isInside) {
-          showToast(`Location set (${clickedLat}, ${clickedLng}) — Inside Adama`, 'success');
+          showToast(`Location set (${clickedLat}, ${clickedLng}) — Inside Adama (Live tracking paused)`, 'success');
         } else {
-          showToast(`Location set (${clickedLat}, ${clickedLng}) — Outside Adama`, 'info');
+          showToast(`Location set (${clickedLat}, ${clickedLng}) — Outside Adama (Live tracking paused)`, 'info');
         }
       });
 
@@ -298,14 +306,44 @@ const MarketplaceMapPage: React.FC = () => {
       </div>
     `;
 
-    userMarkerRef.current = L.marker([loc.lat, loc.lng], { icon: buyerIcon, zIndexOffset: 1000 })
+    const marker = L.marker([loc.lat, loc.lng], {
+      icon: buyerIcon,
+      zIndexOffset: 1000,
+      draggable: true,
+    })
       .bindPopup(popupHtml)
-      .bindTooltip(`You are here (${isInside ? 'Inside Adama' : 'Outside Adama'})`, {
+      .bindTooltip(`You are here (${isInside ? 'Inside Adama' : 'Outside Adama'}) — Drag to adjust`, {
         permanent: false,
         direction: 'top',
         offset: [0, -22],
       })
       .addTo(markersGroupRef.current);
+
+    marker.on('dragend', (e: any) => {
+      const pos = e.target.getLatLng();
+      const newLat = Number(pos.lat.toFixed(6));
+      const newLng = Number(pos.lng.toFixed(6));
+      const inside = isInsideAdamaServiceArea(newLat, newLng);
+
+      // Pause live tracking so dragged position stays
+      if (watchIdRef.current !== null) {
+        navigator.geolocation.clearWatch(watchIdRef.current);
+        watchIdRef.current = null;
+        setIsLiveTracking(false);
+      }
+
+      setBuyerLocation({
+        lat: newLat,
+        lng: newLng,
+        accuracy: 5,
+        isInside: inside,
+        timestamp: Date.now(),
+      });
+      fetchMapPlaces(newLat, newLng);
+      showToast(`Location set to (${newLat}, ${newLng}) — Live tracking paused`, 'success');
+    });
+
+    userMarkerRef.current = marker;
   }, []);
 
   // Render Marketplace Places Markers
@@ -706,9 +744,16 @@ const MarketplaceMapPage: React.FC = () => {
                 <div className="flex justify-between items-center pt-1 border-t border-slate-100 text-[10px]">
                   <span className="text-slate-500">Accuracy:</span>
                   <span className={`font-bold ${buyerLocation.accuracy > 150 ? 'text-amber-600' : 'text-slate-700'}`}>
-                    ±{Math.round(buyerLocation.accuracy)} meters {buyerLocation.accuracy > 150 ? '(Approximate / Network)' : ''}
+                    {buyerLocation.accuracy > 5000
+                      ? `±${Math.round(buyerLocation.accuracy / 1000)} km (Approximate / Network)`
+                      : `±${Math.round(buyerLocation.accuracy)} meters`}
                   </span>
                 </div>
+                {buyerLocation.accuracy > 5000 && (
+                  <div className="mt-1 text-[10px] text-amber-700 bg-amber-50 p-1.5 rounded-lg border border-amber-200">
+                    💡 Wide network IP range. Click or drag the blue pin to place it precisely at your location in Adama.
+                  </div>
+                )}
               </div>
 
               {/* Status Notice */}
@@ -846,6 +891,7 @@ const MarketplaceMapPage: React.FC = () => {
 
           <button
             onClick={handleToggleLiveTracking}
+            title={isLiveTracking ? 'Click to pause continuous tracking' : 'Click to start continuous live tracking'}
             className={`px-3.5 py-2 backdrop-blur-xs rounded-xl shadow-lg border text-xs font-bold flex items-center gap-2 transition-all cursor-pointer ${
               isLiveTracking
                 ? 'bg-blue-600 text-white border-blue-700'
@@ -853,7 +899,7 @@ const MarketplaceMapPage: React.FC = () => {
             }`}
           >
             <Radio className={`w-4 h-4 ${isLiveTracking ? 'text-white animate-pulse' : 'text-slate-600'}`} />
-            <span>{isLiveTracking ? 'Live Tracking On' : 'Live Tracking'}</span>
+            <span>{isLiveTracking ? 'Tracking (Tap to Pause)' : 'Start Live Tracking'}</span>
           </button>
 
           <button
