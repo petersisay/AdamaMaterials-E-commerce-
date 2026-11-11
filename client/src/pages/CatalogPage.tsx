@@ -244,14 +244,45 @@ const CatalogPage: React.FC = () => {
           ) : products.length === 0 ? (
             <div className="bg-white rounded-2xl border border-slate-200 p-16 text-center text-slate-500 flex flex-col items-center justify-center flex-1">
               <RotateCcw className="w-12 h-12 text-slate-300 mb-4 animate-spin-reverse" />
-              <h3 className="font-bold text-lg text-slate-800">No materials match your filters</h3>
-              <p className="text-sm text-slate-400 mt-1">Try tweaking your keywords or category selections</p>
-              <button 
-                onClick={handleClearFilters}
-                className="mt-6 px-4 py-2 bg-primary-600 hover:bg-primary-700 text-white rounded-xl text-sm font-semibold shadow-md transition-all cursor-pointer"
-              >
-                Clear all filters
-              </button>
+              <h3 className="font-bold text-lg text-slate-800">
+                {(!search && !category && !materialType && !minPrice && !maxPrice && conditions.length === 0)
+                  ? 'No approved materials found yet'
+                  : 'No materials match your filters'}
+              </h3>
+              <p className="text-sm text-slate-400 mt-1">
+                {(!search && !category && !materialType && !minPrice && !maxPrice && conditions.length === 0)
+                  ? 'New reclaimed materials are approved and cataloged daily in Adama City'
+                  : 'Try tweaking your keywords or category selections'}
+              </p>
+              <div className="flex items-center gap-3 mt-6">
+                {(!search && !category && !materialType && !minPrice && !maxPrice && conditions.length === 0) ? (
+                  <button 
+                    onClick={() => {
+                      setLoading(true);
+                      api.get('/products?page=1&limit=8&sortBy=newest')
+                        .then(res => {
+                          if (res.data?.success) {
+                            setProducts(res.data.products || []);
+                            setTotal(res.data.total || 0);
+                            setPages(res.data.pages || 1);
+                          }
+                        })
+                        .finally(() => setLoading(false));
+                    }}
+                    className="px-4 py-2 bg-primary-600 hover:bg-primary-700 text-white rounded-xl text-sm font-semibold shadow-md transition-all cursor-pointer flex items-center gap-1.5"
+                  >
+                    <RotateCcw className="w-4 h-4" />
+                    Refresh Catalog
+                  </button>
+                ) : (
+                  <button 
+                    onClick={handleClearFilters}
+                    className="px-4 py-2 bg-primary-600 hover:bg-primary-700 text-white rounded-xl text-sm font-semibold shadow-md transition-all cursor-pointer"
+                  >
+                    Clear all filters
+                  </button>
+                )}
+              </div>
             </div>
           ) : (
             <>

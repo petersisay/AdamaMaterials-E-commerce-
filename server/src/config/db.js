@@ -1,5 +1,6 @@
 const mongoose = require('mongoose');
 const seedData = require('../jobs/seed');
+const ensureApprovedProductsExist = require('../jobs/seedProducts');
 
 const cleanseProductImagesInDatabase = async () => {
   try {
@@ -92,6 +93,13 @@ const connectDB = async () => {
 
     // Run auto image sanitation on primary DB
     await cleanseProductImagesInDatabase();
+
+    // Guarantee verified approved materials exist in primary DB
+    try {
+      await ensureApprovedProductsExist();
+    } catch (prodErr) {
+      console.warn('Auto-product seed note:', prodErr.message);
+    }
 
     // If primary DB lacks map places or initial data, safely seed
     try {

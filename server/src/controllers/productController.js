@@ -7,6 +7,7 @@ const AppError = require('../utils/appError');
 const asyncHandler = require('../utils/asyncHandler');
 const mongoose = require('mongoose');
 const { calculateDistanceKm } = require('../config/serviceArea');
+const ensureApprovedProductsExist = require('../jobs/seedProducts');
 
 // Helper for parsing filters
 const buildFilters = async (query) => {
@@ -16,21 +17,21 @@ const buildFilters = async (query) => {
   filter.approvalStatus = 'APPROVED';
 
   // Category filter (support ID or Slug)
-  if (query.category) {
+  if (query.category && query.category !== 'all' && query.category !== 'null' && query.category !== 'undefined') {
     if (mongoose.Types.ObjectId.isValid(query.category)) {
       filter.category = query.category;
     } else {
-      const cat = await Category.findOne({ slug: query.category });
+      const cat = await Category.findOne({ slug: query.category.toLowerCase().trim() });
       if (cat) filter.category = cat._id;
     }
   }
 
   // Material type filter (support ID or Slug)
-  if (query.materialType) {
+  if (query.materialType && query.materialType !== 'all' && query.materialType !== 'null' && query.materialType !== 'undefined') {
     if (mongoose.Types.ObjectId.isValid(query.materialType)) {
       filter.materialType = query.materialType;
     } else {
-      const mat = await MaterialType.findOne({ slug: query.materialType });
+      const mat = await MaterialType.findOne({ slug: query.materialType.toLowerCase().trim() });
       if (mat) filter.materialType = mat._id;
     }
   }
@@ -63,6 +64,12 @@ const buildFilters = async (query) => {
 
 // 1. Get all public products (with filters & pagination & location-aware sorting)
 exports.getPublicProducts = asyncHandler(async (req, res, next) => {
+  // Automatically guarantee materials catalog is populated if database is unseeded
+  const totalApproved = await Product.countDocuments({ approvalStatus: 'APPROVED' });
+  if (totalApproved === 0) {
+    await ensureApprovedProductsExist();
+  }
+
   const filter = await buildFilters(req.query);
 
   const { buyerLat, buyerLng, sortBy } = req.query;
