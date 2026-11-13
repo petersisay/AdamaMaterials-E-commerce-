@@ -277,11 +277,21 @@ exports.createProduct = asyncHandler(async (req, res, next) => {
     condition = 'Good';
   }
 
+  // Validate realistic pricing & quantity
+  let validatedPrice = Number(price);
+  if (price !== undefined && (isNaN(validatedPrice) || !isFinite(validatedPrice) || validatedPrice < 1)) {
+    return next(new AppError('Product price must be a valid positive amount of at least 1 ETB.', 400));
+  }
+  let validatedQty = Number(quantity);
+  if (quantity !== undefined && (isNaN(validatedQty) || !isFinite(validatedQty) || !Number.isInteger(validatedQty) || validatedQty < 1)) {
+    return next(new AppError('Initial product quantity must be an integer of at least 1.', 400));
+  }
+
   const newProduct = await Product.create({
     name,
     description: description || 'High quality reusable material in Adama.',
-    price: Number(price) || 100,
-    quantity: Number(quantity) || 1,
+    price: !isNaN(validatedPrice) && validatedPrice >= 1 ? validatedPrice : 100,
+    quantity: !isNaN(validatedQty) && validatedQty >= 1 ? validatedQty : 1,
     category,
     materialType,
     condition,
@@ -326,6 +336,22 @@ exports.updateProduct = asyncHandler(async (req, res, next) => {
 
   if (['APPROVED', 'PENDING_APPROVAL'].includes(product.approvalStatus)) {
     product.approvalStatus = 'DRAFT';
+  }
+
+  // Validate realistic pricing & quantity if updated
+  if (req.body.price !== undefined) {
+    const numPrice = Number(req.body.price);
+    if (isNaN(numPrice) || !isFinite(numPrice) || numPrice < 1) {
+      return next(new AppError('Product price must be a valid positive amount of at least 1 ETB.', 400));
+    }
+    req.body.price = numPrice;
+  }
+  if (req.body.quantity !== undefined) {
+    const numQty = Number(req.body.quantity);
+    if (isNaN(numQty) || !isFinite(numQty) || !Number.isInteger(numQty) || numQty < 0) {
+      return next(new AppError('Product quantity must be a non-negative integer.', 400));
+    }
+    req.body.quantity = numQty;
   }
 
   const updatedProduct = await Product.findByIdAndUpdate(
