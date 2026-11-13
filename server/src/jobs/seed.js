@@ -1080,7 +1080,7 @@ const seedData = async (isImported = false) => {
         materialType: electroMat._id,
         condition: 'Good',
         images: [
-          'https://media.istockphoto.com/id/939597574/photo/the-group-pumps-at-the-water-pipe.webp?a=1&b=1&s=612x612&w=0&k=20&c=JS8bOn5XufjQMuwIZbShp6_ceWz09ZK2UoShiYmZtO4=',
+          'https://images.unsplash.com/photo-1581092160607-ee22621dd758?w=600&auto=format&fit=crop&q=80',
         ],
         seller: seller6._id,
         approvalStatus: 'APPROVED',
