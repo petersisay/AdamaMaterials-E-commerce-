@@ -26,9 +26,25 @@ const Product = require('../models/Product');
  */
 async function ensureApprovedProductsExist() {
   try {
-    // 1. Permanently heal legacy title misspellings if present
-    await Product.updateMany({ name: 'Bible Verse Hoddie' }, { $set: { name: 'Bible Verse Hoodie' } });
-    await Product.updateMany({ name: 'Hoddie' }, { $set: { name: 'Hoodie' } });
+    // 1. Permanently heal legacy title misspellings and standardize generic titles
+    const titleRenames = {
+      'Shirt': 'Everyday Pre-Shrunk Cotton Casual Shirt',
+      'T-Shirt': 'Premium Apostolic Typography Graphic T-Shirt',
+      'Jacket': 'Weather-Resistant Insulated Winter Jacket',
+      'Tea Mug': 'High-Gloss Ceramic Tea Mug',
+      'Bible Verse Coffee Cup': 'Inspirational Scripture Ceramic Coffee Cup',
+      'Bible Cover': 'Protective Handcrafted Leather Bible Cover Case',
+      'Biblical Books': 'Kalu Ynager Biblical Doctrine Study Books',
+      'Bible Verse Tote Bag': 'Eco-Friendly Canvas Scripture Tote Bag',
+      'Cap': 'Embroidered Apostolic Monogram Baseball Cap',
+      'Hoddie': 'Classic Heavyweight Cotton Hoodie',
+      'Hoodie': 'Classic Heavyweight Cotton Hoodie',
+      'Bible Verse Hoddie': 'Bible Verse Hoodie'
+    };
+
+    for (const [oldName, newName] of Object.entries(titleRenames)) {
+      await Product.updateMany({ name: oldName }, { $set: { name: newName } });
+    }
 
     // If we already have 5 or more approved products, check and return
     const approvedCount = await Product.countDocuments({ approvalStatus: 'APPROVED' });
