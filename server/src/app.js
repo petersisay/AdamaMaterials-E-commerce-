@@ -75,6 +75,32 @@ const limiter = rateLimit({
 });
 app.use('/api', limiter);
 
+// Strict rate limiter for sensitive authentication operations (login, register, password reset)
+const authLimiter = rateLimit({
+  max: process.env.NODE_ENV === 'production' ? 30 : 0, // 30 attempts per 15 min window in production
+  windowMs: 15 * 60 * 1000,
+  message: {
+    success: false,
+    message: 'Too many authentication attempts from this IP, please try again in 15 minutes.',
+  },
+  standardHeaders: true,
+  legacyHeaders: false,
+  skip: () => process.env.NODE_ENV !== 'production',
+});
+
+// Strict rate limiter for checkout and payment creation
+const checkoutLimiter = rateLimit({
+  max: process.env.NODE_ENV === 'production' ? 30 : 0, // 30 checkout requests per 15 min window
+  windowMs: 15 * 60 * 1000,
+  message: {
+    success: false,
+    message: 'Too many checkout requests from this IP. Please wait a few moments before trying again.',
+  },
+  standardHeaders: true,
+  legacyHeaders: false,
+  skip: () => process.env.NODE_ENV !== 'production',
+});
+
 // Body parser, reading data from body into req.body (allow up to 25MB for receipts & photos)
 app.use(express.json({ limit: '25mb' }));
 app.use(express.urlencoded({ extended: true, limit: '25mb' }));
@@ -99,11 +125,16 @@ const reviewRouter = require('./routes/reviewRoutes');
 const adminRouter = require('./routes/adminRoutes');
 const mapRouter = require('./routes/mapRoutes');
 
+app.use('/api/v1/auth/login', authLimiter);
+app.use('/api/v1/auth/register', authLimiter);
+app.use('/api/v1/auth/forgotpassword', authLimiter);
+app.use('/api/v1/auth/resetpassword', authLimiter);
 app.use('/api/v1/auth', authRouter);
 app.use('/api/v1/products', productRouter);
 app.use('/api/v1/categories', categoryRouter);
 app.use('/api/v1/material-types', materialTypeRouter);
 app.use('/api/v1/cart', cartRouter);
+app.use('/api/v1/orders/checkout', checkoutLimiter);
 app.use('/api/v1/orders', orderRouter);
 app.use('/api/v1/payments', paymentRouter);
 app.use('/api/v1/deliveries', deliveryRouter);
@@ -115,8 +146,11 @@ app.use('/api/v1/admin', adminRouter);
 app.use('/api/v1/map', mapRouter);
 
 
-// Database Statistics Reset Endpoint (Dev / Testing)
+// Database Statistics Reset Endpoint (Strictly disabled in production)
 app.post('/api/v1/reset-stats', async (req, res, next) => {
+  if (process.env.NODE_ENV === 'production') {
+    return next(new AppError('Reset endpoint is disabled in production.', 403));
+  }
   try {
     const seedData = require('./jobs/seed');
     await seedData(true);
