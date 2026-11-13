@@ -6,9 +6,25 @@ const cleanseProductImagesInDatabase = async () => {
   try {
     const Product = require('../models/Product');
 
-    // 1. Permanently heal legacy title misspellings in database
-    await Product.updateMany({ name: 'Bible Verse Hoddie' }, { $set: { name: 'Bible Verse Hoodie' } });
-    await Product.updateMany({ name: 'Hoddie' }, { $set: { name: 'Hoodie' } });
+    // 1. Permanently heal legacy title misspellings and standardize generic titles
+    const titleRenames = {
+      'Shirt': 'Everyday Pre-Shrunk Cotton Casual Shirt',
+      'T-Shirt': 'Premium Apostolic Typography Graphic T-Shirt',
+      'Jacket': 'Weather-Resistant Insulated Winter Jacket',
+      'Tea Mug': 'High-Gloss Ceramic Tea Mug',
+      'Bible Verse Coffee Cup': 'Inspirational Scripture Ceramic Coffee Cup',
+      'Bible Cover': 'Protective Handcrafted Leather Bible Cover Case',
+      'Biblical Books': 'Kalu Ynager Biblical Doctrine Study Books',
+      'Bible Verse Tote Bag': 'Eco-Friendly Canvas Scripture Tote Bag',
+      'Cap': 'Embroidered Apostolic Monogram Baseball Cap',
+      'Hoddie': 'Classic Heavyweight Cotton Hoodie',
+      'Hoodie': 'Classic Heavyweight Cotton Hoodie',
+      'Bible Verse Hoddie': 'Bible Verse Hoodie'
+    };
+
+    for (const [oldName, newName] of Object.entries(titleRenames)) {
+      await Product.updateMany({ name: oldName }, { $set: { name: newName } });
+    }
 
     const products = await Product.find({});
     if (!products || products.length === 0) return;
@@ -49,19 +65,29 @@ const cleanseProductImagesInDatabase = async () => {
       'Salvaged Heavy Duty Aluminum Window Frames & Profiles': 'https://images.unsplash.com/photo-1719067720887-b55ecfdd21b2?w=600&auto=format&fit=crop&q=60&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1yZWxhdGVkfDEzfHx8ZW58MHx8fHx8',
       'Heavy Scrap Vehicle Leaf Springs & Axles (Approx 70kg)': 'https://images.unsplash.com/photo-1712045412870-e486f0bf93b2?w=600&auto=format&fit=crop&q=60&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxzZWFyY2h8MTB8fEhlYXZ5JTIwU2NyYXAlMjBWZWhpY2xlJTIwTGVhZiUyMFNwcmluZ3MlMjAlMjYlMjBBeGxlcyUyMChBcHByb3glMjA3MGtnKXxlbnwwfHwwfHx8MA%3D%3D',
       'Used High School Mathematics & Physics Textbooks': 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTT5O62YE3VZJLL6IEpEaxm60ajvi-BtKqeDgaeMeyAWQ&s',
-      // Legacy catalog mappings with authentic verified imagery and corrected spellings
+      // Standardized and descriptive product titles with verified authentic imagery
+      'High-Gloss Ceramic Tea Mug': 'https://images.unsplash.com/photo-1514432324607-a09d9b4aefdd?w=600&auto=format&fit=crop&q=80',
       'Tea Mug': 'https://images.unsplash.com/photo-1514432324607-a09d9b4aefdd?w=600&auto=format&fit=crop&q=80',
+      'Inspirational Scripture Ceramic Coffee Cup': 'https://images.unsplash.com/photo-1517256064527-09c73fc73e38?w=600&auto=format&fit=crop&q=80',
       'Bible Verse Coffee Cup': 'https://images.unsplash.com/photo-1517256064527-09c73fc73e38?w=600&auto=format&fit=crop&q=80',
+      'Everyday Pre-Shrunk Cotton Casual Shirt': 'https://images.unsplash.com/photo-1596755094514-f87e34085b2c?w=600&auto=format&fit=crop&q=80',
       'Shirt': 'https://images.unsplash.com/photo-1596755094514-f87e34085b2c?w=600&auto=format&fit=crop&q=80',
+      'Premium Apostolic Typography Graphic T-Shirt': 'https://images.unsplash.com/photo-1521572267360-ee0c2909d518?w=600&auto=format&fit=crop&q=80',
       'T-Shirt': 'https://images.unsplash.com/photo-1521572267360-ee0c2909d518?w=600&auto=format&fit=crop&q=80',
+      'Weather-Resistant Insulated Winter Jacket': 'https://images.unsplash.com/photo-1551028719-00167b16eac5?w=600&auto=format&fit=crop&q=80',
       'Jacket': 'https://images.unsplash.com/photo-1551028719-00167b16eac5?w=600&auto=format&fit=crop&q=80',
+      'Eco-Friendly Canvas Scripture Tote Bag': 'https://images.unsplash.com/photo-1544816155-12df9643f363?w=600&auto=format&fit=crop&q=80',
       'Bible Verse Tote Bag': 'https://images.unsplash.com/photo-1544816155-12df9643f363?w=600&auto=format&fit=crop&q=80',
       'Bible Verse Hoodie': 'https://images.unsplash.com/photo-1556905055-8f358a7a47b2?w=600&auto=format&fit=crop&q=80',
       'Bible Verse Hoddie': 'https://images.unsplash.com/photo-1556905055-8f358a7a47b2?w=600&auto=format&fit=crop&q=80',
+      'Classic Heavyweight Cotton Hoodie': 'https://images.unsplash.com/photo-1509967419530-da38b4704bc6?w=600&auto=format&fit=crop&q=80',
       'Hoodie': 'https://images.unsplash.com/photo-1509967419530-da38b4704bc6?w=600&auto=format&fit=crop&q=80',
       'Hoddie': 'https://images.unsplash.com/photo-1509967419530-da38b4704bc6?w=600&auto=format&fit=crop&q=80',
+      'Kalu Ynager Biblical Doctrine Study Books': 'https://images.unsplash.com/photo-1544716278-ca5e3f4abd8c?w=600&auto=format&fit=crop&q=80',
       'Biblical Books': 'https://images.unsplash.com/photo-1544716278-ca5e3f4abd8c?w=600&auto=format&fit=crop&q=80',
+      'Protective Handcrafted Leather Bible Cover Case': 'https://images.unsplash.com/photo-1544947950-fa07a98d237f?w=600&auto=format&fit=crop&q=80',
       'Bible Cover': 'https://images.unsplash.com/photo-1544947950-fa07a98d237f?w=600&auto=format&fit=crop&q=80',
+      'Embroidered Apostolic Monogram Baseball Cap': 'https://images.unsplash.com/photo-1588850561407-ed78c282e89b?w=600&auto=format&fit=crop&q=80',
       'Cap': 'https://images.unsplash.com/photo-1588850561407-ed78c282e89b?w=600&auto=format&fit=crop&q=80'
     };
 
