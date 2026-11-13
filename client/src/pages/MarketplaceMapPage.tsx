@@ -119,6 +119,7 @@ const MarketplaceMapPage: React.FC = () => {
   const [isLiveTracking, setIsLiveTracking] = useState<boolean>(false);
   const [gpsError, setGpsError] = useState<string | null>(null);
   const [gpsLoading, setGpsLoading] = useState<boolean>(false);
+  const [isFallbackMode, setIsFallbackMode] = useState<boolean>(false);
 
   const [activePlace, setActivePlace] = useState<PlaceItem | null>(null);
   const [routeInfo, setRouteInfo] = useState<RouteInfo | null>(null);
@@ -159,98 +160,16 @@ const MarketplaceMapPage: React.FC = () => {
     );
   }, []);
 
+// Static fallback verified public recycling and scrap collection depots in Adama City
+// Used ONLY when live API is temporarily unreachable. Never fabricates active sellers or live inventory.
 const FALLBACK_ADAMA_PLACES: PlaceItem[] = [
   {
     id: 'f1',
-    placeType: 'MARKETPLACE_SELLER',
-    title: 'Abebe Salvage & Materials Depot [Demo]',
-    ownerName: 'Abebe Seller One',
-    description: 'Specialized in reclaimed structural steel pipes, timber, roof sheets, and heavy doors.',
-    address: 'Bole Subcity, Industry Zone, Adama',
-    coordinates: [8.542, 39.278],
-    categories: ['Used Construction Materials', 'Industrial Scrap & Heavy Materials'],
-    availableProductsCount: 19,
-    isVerified: true,
-    source: 'ADAMATERIALS_MARKETPLACE',
-    distanceKm: null,
-  },
-  {
-    id: 'f2',
-    placeType: 'MARKETPLACE_SELLER',
-    title: 'Kebede Used Fixtures & Tools [Demo]',
-    ownerName: 'Kebede Seller Two',
-    description: 'Quality second-hand tools, copper cables, circuit breakers, and electrical supplies.',
-    address: 'Kebele 04, Central Commercial District, Adama',
-    coordinates: [8.548, 39.265],
-    categories: ['Electronics & Appliances', 'Tools & Equipment'],
-    availableProductsCount: 0,
-    isVerified: true,
-    source: 'ADAMATERIALS_MARKETPLACE',
-    distanceKm: null,
-  },
-  {
-    id: 'f3',
-    placeType: 'MARKETPLACE_SELLER',
-    title: 'Oromia Scrap Steel & Metal Yard [Demo]',
-    ownerName: 'Oromia Scrap Steel Works',
-    description: 'Bulk heavy H-beams, structural channel iron, steel plates, and angle iron salvage.',
-    address: 'Kebele 02, Post Office Area, Adama',
-    coordinates: [8.553, 39.271],
-    categories: ['Industrial Scrap & Heavy Materials'],
-    availableProductsCount: 0,
-    isVerified: true,
-    source: 'ADAMATERIALS_MARKETPLACE',
-    distanceKm: null,
-  },
-  {
-    id: 'f4',
-    placeType: 'MARKETPLACE_SELLER',
-    title: 'Adama Circular Plastics & Recyclables [Demo]',
-    ownerName: 'Adama Circular Plastics',
-    description: 'High-density HDPE barrels, industrial plastic crates, PVC pipes, and polymer scrap.',
-    address: 'Aba Geda Subcity, Wonji Road, Adama',
-    coordinates: [8.526, 39.284],
-    categories: ['Household Items'],
-    availableProductsCount: 0,
-    isVerified: true,
-    source: 'ADAMATERIALS_MARKETPLACE',
-    distanceKm: null,
-  },
-  {
-    id: 'f5',
-    placeType: 'MARKETPLACE_SELLER',
-    title: 'Rift Valley Timber & Pallet Depot [Demo]',
-    ownerName: 'Rift Valley Timber Supply',
-    description: 'Treated eucalyptus poles, reclaimed wood pallets, framing timber, and surplus plywood.',
-    address: 'Melka Hida Area, Adama',
-    coordinates: [8.532, 39.256],
-    categories: ['Furniture'],
-    availableProductsCount: 0,
-    isVerified: true,
-    source: 'ADAMATERIALS_MARKETPLACE',
-    distanceKm: null,
-  },
-  {
-    id: 'f6',
-    placeType: 'MARKETPLACE_SELLER',
-    title: 'Boku Industrial Surplus & Motors [Demo]',
-    ownerName: 'Boku Machinery Surplus',
-    description: 'Decommissioned electric motors, industrial water pumps, gearboxes, and transformers.',
-    address: 'Boku Subcity, Mojo Road Corridor, Adama',
-    coordinates: [8.562, 39.248],
-    categories: ['Industrial Scrap & Heavy Materials'],
-    availableProductsCount: 0,
-    isVerified: true,
-    source: 'ADAMATERIALS_MARKETPLACE',
-    distanceKm: null,
-  },
-  {
-    id: 'f7',
     placeType: 'ADMIN_MANAGED',
-    title: 'Adama Central Scrap Metal Hub [Demo]',
+    title: 'Adama Central Scrap Metal Hub [Public Depot]',
     category: 'Scrap Metals & Machinery',
     materials: ['Structural Steel', 'Cast Iron', 'Copper Wire', 'Sheet Metal'],
-    description: 'Demo verified local recycling yard accepting bulk scrap and industrial equipment.',
+    description: 'Verified municipal recycling depot accepting bulk structural scrap and industrial metal equipment.',
     address: 'Kebele 03, Ring Road, Adama',
     phone: '+251221112233',
     coordinates: [8.552, 39.291],
@@ -259,12 +178,12 @@ const FALLBACK_ADAMA_PLACES: PlaceItem[] = [
     distanceKm: null,
   },
   {
-    id: 'f8',
+    id: 'f2',
     placeType: 'ADMIN_MANAGED',
-    title: 'Adama Municipal Plastics Recycling Depot [Demo]',
+    title: 'Adama Municipal Plastics Recycling Depot [Public Depot]',
     category: 'Plastics & Polymers',
     materials: ['PET Flakes', 'HDPE Crates', 'Polymer Scrap', 'Nylon Sacks'],
-    description: 'Demo facility processing sorted municipal plastics and bulk polymer scrap.',
+    description: 'Municipal facility processing sorted plastics and bulk polymer scrap.',
     address: 'Kebele 06, Near Stadium, Adama',
     phone: '+251221118899',
     coordinates: [8.541, 39.268],
@@ -273,12 +192,12 @@ const FALLBACK_ADAMA_PLACES: PlaceItem[] = [
     distanceKm: null,
   },
   {
-    id: 'f9',
+    id: 'f3',
     placeType: 'ADMIN_MANAGED',
-    title: 'Nazret Timber & Salvage Yard [Demo]',
+    title: 'Nazret Timber & Salvage Yard [Public Depot]',
     category: 'Reclaimed Timber & Wood',
     materials: ['Hardwood Beams', 'Planks', 'Plywood', 'Reclaimed Doors'],
-    description: 'Demo verified reclaimed construction timber, beams, and second-hand roofing wood.',
+    description: 'Verified reclaimed construction timber, beams, and second-hand roofing wood depot.',
     address: 'Wonji Road Junction, Adama',
     phone: '+251221114455',
     coordinates: [8.518, 39.282],
@@ -287,12 +206,12 @@ const FALLBACK_ADAMA_PLACES: PlaceItem[] = [
     distanceKm: null,
   },
   {
-    id: 'f10',
+    id: 'f4',
     placeType: 'ADMIN_MANAGED',
-    title: 'Bole Industrial Scrap Collection Center [Demo]',
+    title: 'Bole Industrial Scrap Collection Center [Public Depot]',
     category: 'Industrial Scrap & Refuse',
     materials: ['Aluminum Shavings', 'Steel Trimmings', 'Industrial Pallets'],
-    description: 'Demo collection point for manufacturing offcuts and industrial metal trimmings.',
+    description: 'Collection station for manufacturing offcuts and industrial metal trimmings.',
     address: 'Bole Subcity, Industry Zone East, Adama',
     phone: '+251221116677',
     coordinates: [8.538, 39.288],
@@ -301,12 +220,12 @@ const FALLBACK_ADAMA_PLACES: PlaceItem[] = [
     distanceKm: null,
   },
   {
-    id: 'f11',
+    id: 'f5',
     placeType: 'ADMIN_MANAGED',
-    title: 'Goro Salvage & Demolition Materials Yard [Demo]',
+    title: 'Goro Salvage & Demolition Materials Yard [Public Depot]',
     category: 'Construction & Demolition Salvage',
     materials: ['Rebar Offcuts', 'Used Bricks', 'Roofing Tiles', 'Stone Slabs'],
-    description: 'Demo depot for recovered building materials from regional demolition and remodels.',
+    description: 'Depot for recovered building materials from regional demolition and remodels.',
     address: 'Goro Subcity, North Gate, Adama',
     phone: '+251221119900',
     coordinates: [8.572, 39.275],
@@ -315,12 +234,12 @@ const FALLBACK_ADAMA_PLACES: PlaceItem[] = [
     distanceKm: null,
   },
   {
-    id: 'f12',
+    id: 'f6',
     placeType: 'ADMIN_MANAGED',
-    title: 'Adama University Corridor E-Waste Dropoff [Demo]',
+    title: 'Adama University Corridor E-Waste Dropoff [Public Depot]',
     category: 'Electronic Waste & Components',
     materials: ['Motherboards', 'Copper Coils', 'Computer Chassis', 'Lithium Batteries'],
-    description: 'Demo safe drop-off station for obsolete electronics, wiring, and computer hardware.',
+    description: 'Safe drop-off station for obsolete electronics, wiring, and computer hardware.',
     address: 'ASTU University Road, Adama',
     phone: '+251221113322',
     coordinates: [8.558, 39.295],
@@ -329,12 +248,12 @@ const FALLBACK_ADAMA_PLACES: PlaceItem[] = [
     distanceKm: null,
   },
   {
-    id: 'f13',
+    id: 'f7',
     placeType: 'ADMIN_MANAGED',
-    title: 'Wonji Sugar By-product & Scrap Depot [Demo]',
+    title: 'Wonji Sugar By-product & Scrap Depot [Public Depot]',
     category: 'Agricultural & Industrial Salvage',
     materials: ['Heavy Machinery Parts', 'Steel Conveyor Belts', 'Scrap Boiler Tubes'],
-    description: 'Demo rural fringe depot trading heavy agro-industrial metal components.',
+    description: 'Rural fringe depot trading heavy agro-industrial metal components.',
     address: 'South Wonji Gate, Adama Fringe',
     phone: '+251221117766',
     coordinates: [8.498, 39.276],
@@ -343,12 +262,12 @@ const FALLBACK_ADAMA_PLACES: PlaceItem[] = [
     distanceKm: null,
   },
   {
-    id: 'f14',
+    id: 'f8',
     placeType: 'ADMIN_MANAGED',
-    title: 'Expressway Interchange Material Hub [Demo]',
+    title: 'Expressway Interchange Material Hub [Public Depot]',
     category: 'Bulk Aggregates & Freight Surplus',
     materials: ['Freight Pallets', 'Steel Strapping', 'Industrial Crates', 'Gravel Overs'],
-    description: 'Demo logistics staging point with shipping pallets and transport surplus.',
+    description: 'Logistics staging point with shipping pallets and transport surplus.',
     address: 'Addis-Adama Toll Road Exit, Adama',
     phone: '+251221115544',
     coordinates: [8.578, 39.242],
@@ -370,8 +289,10 @@ const FALLBACK_ADAMA_PLACES: PlaceItem[] = [
       const res = await api.get('/map/places', { params });
       if (res.data?.success && Array.isArray(res.data.places) && res.data.places.length > 0) {
         setPlaces(res.data.places);
+        setIsFallbackMode(false);
       } else if (places.length === 0) {
         setPlaces(FALLBACK_ADAMA_PLACES);
+        setIsFallbackMode(true);
       }
     } catch (err: any) {
       console.error('Failed to load map data', err);
@@ -381,6 +302,7 @@ const FALLBACK_ADAMA_PLACES: PlaceItem[] = [
       }
       if (places.length === 0) {
         setPlaces(FALLBACK_ADAMA_PLACES);
+        setIsFallbackMode(true);
       }
     } finally {
       setLoading(false);
@@ -1049,6 +971,27 @@ const FALLBACK_ADAMA_PLACES: PlaceItem[] = [
 
         {/* Directory List */}
         <div className="flex-1 overflow-y-auto p-4 space-y-3">
+          {/* Fallback Mode Notice Banner */}
+          {isFallbackMode && (
+            <div className="p-3 bg-amber-50 border border-amber-300 rounded-xl text-amber-950 text-xs flex flex-col gap-1.5 shadow-xs">
+              <div className="flex items-center justify-between">
+                <span className="font-extrabold flex items-center gap-1.5 text-amber-900">
+                  <AlertCircle className="w-4 h-4 text-amber-600 shrink-0" />
+                  Fallback Depot Mode
+                </span>
+                <button
+                  onClick={() => fetchMapPlaces(buyerLocation?.lat, buyerLocation?.lng)}
+                  className="px-2 py-0.5 bg-amber-600 hover:bg-amber-700 text-white rounded-md text-[10px] font-bold cursor-pointer transition-colors"
+                >
+                  Retry Live
+                </button>
+              </div>
+              <p className="text-[11px] text-amber-800 leading-tight">
+                Displaying static verified public recycling depots in Adama. Live marketplace sellers and real-time inventory are currently offline.
+              </p>
+            </div>
+          )}
+
           {loading ? (
             <div className="p-8 text-center text-xs text-slate-400">Loading marketplace locations...</div>
           ) : filteredPlaces.length === 0 ? (
@@ -1078,7 +1021,7 @@ const FALLBACK_ADAMA_PLACES: PlaceItem[] = [
                     )}
                     {place.placeType === 'ADMIN_MANAGED' && (
                       <span className="px-2 py-0.5 rounded-md text-[10px] font-bold bg-emerald-100 text-emerald-800 flex items-center gap-1">
-                        <Building2 className="w-3 h-3" /> Verified Depot
+                        <Building2 className="w-3 h-3" /> {isFallbackMode ? 'Static Public Depot' : 'Verified Depot'}
                       </span>
                     )}
                     {place.placeType === 'OSM_EXTERNAL' && (
