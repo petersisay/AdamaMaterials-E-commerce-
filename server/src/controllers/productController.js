@@ -141,7 +141,13 @@ exports.getPublicProducts = asyncHandler(async (req, res, next) => {
 
 // 2. Get Single Product
 exports.getProductById = asyncHandler(async (req, res, next) => {
-  const product = await Product.findById(req.params.id)
+  const { id } = req.params;
+
+  if (!id || !mongoose.Types.ObjectId.isValid(id)) {
+    return next(new AppError('Invalid product ID.', 404));
+  }
+
+  const product = await Product.findById(id)
     .populate('category', 'name slug description')
     .populate('materialType', 'name slug description')
     .populate('seller', 'name email sellerProfile.shopName sellerProfile.shopAddress sellerProfile.shopLocation');
@@ -151,20 +157,34 @@ exports.getProductById = asyncHandler(async (req, res, next) => {
   }
 
   const isApproved = product.approvalStatus === 'APPROVED';
-  const isSeller = req.user && product.seller._id.toString() === req.user._id.toString();
+
+  let isSeller = false;
+  if (req.user && product.seller) {
+    const sellerId = product.seller._id ? product.seller._id.toString() : product.seller.toString();
+    isSeller = sellerId === req.user._id.toString();
+  }
+
   const isAdminOrStaff = req.user && ['ADMIN', 'STAFF'].includes(req.user.role);
 
   if (!isApproved && !isSeller && !isAdminOrStaff) {
-    return next(new AppError('You do not have permission to view this product.', 403));
+    return next(new AppError('This product is pending review or not publicly available.', 403));
   }
 
-  const relatedProducts = await Product.find({
-    category: product.category._id,
-    approvalStatus: 'APPROVED',
-    _id: { $ne: product._id },
-  })
-    .limit(4)
-    .select('name price condition images');
+  let relatedProducts = [];
+  try {
+    const categoryId = product.category?._id || product.category;
+    if (categoryId) {
+      relatedProducts = await Product.find({
+        category: categoryId,
+        approvalStatus: 'APPROVED',
+        _id: { $ne: product._id },
+      })
+        .limit(4)
+        .select('name price condition images');
+    }
+  } catch (relErr) {
+    console.warn('Error fetching related products:', relErr.message);
+  }
 
   res.status(200).json({
     success: true,
