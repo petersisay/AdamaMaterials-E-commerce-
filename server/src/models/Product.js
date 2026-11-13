@@ -15,12 +15,24 @@ const productSchema = new mongoose.Schema(
     price: {
       type: Number,
       required: [true, 'Product price is required'],
-      min: [0, 'Price must be non-negative'],
+      min: [1, 'Price must be at least 1 ETB'],
+      validate: {
+        validator: function (val) {
+          return !isNaN(val) && isFinite(val) && val >= 1;
+        },
+        message: 'Product price must be a valid positive amount in ETB',
+      },
     },
     quantity: {
       type: Number,
       required: [true, 'Product quantity is required'],
       min: [0, 'Quantity cannot be negative'],
+      validate: {
+        validator: function (val) {
+          return !isNaN(val) && isFinite(val) && Number.isInteger(val) && val >= 0;
+        },
+        message: 'Quantity must be a non-negative integer',
+      },
       default: 1,
     },
     category: {
