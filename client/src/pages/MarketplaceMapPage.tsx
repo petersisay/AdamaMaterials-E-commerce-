@@ -90,6 +90,21 @@ const isInsideAdamaServiceArea = (lat: number, lng: number): boolean => {
   return inside;
 };
 
+// Client-side Haversine distance calculator for real-time live GPS tracking
+const calcStraightLineKm = (lat1: number, lon1: number, lat2: number, lon2: number): number => {
+  const R = 6371; // Earth's radius in km
+  const dLat = (lat2 - lat1) * (Math.PI / 180);
+  const dLon = (lon2 - lon1) * (Math.PI / 180);
+  const a =
+    Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+    Math.cos(lat1 * (Math.PI / 180)) *
+      Math.cos(lat2 * (Math.PI / 180)) *
+      Math.sin(dLon / 2) *
+      Math.sin(dLon / 2);
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+  return Math.round(R * c * 10) / 10;
+};
+
 const MarketplaceMapPage: React.FC = () => {
   const navigate = useNavigate();
   const { showToast } = useToast();
@@ -133,22 +148,33 @@ const MarketplaceMapPage: React.FC = () => {
     });
   }, [places, typeFilter, searchQuery]);
 
+  // Update straight-line distances client-side for live position changes
+  const updatePlacesDistances = useCallback((lat: number, lng: number) => {
+    setPlaces((prev) =>
+      prev.map((p) => {
+        if (!p.coordinates || !Array.isArray(p.coordinates) || p.coordinates.length < 2) return p;
+        const dist = calcStraightLineKm(lat, lng, p.coordinates[0], p.coordinates[1]);
+        return { ...p, distanceKm: dist };
+      })
+    );
+  }, []);
+
   // Fetch Map Places & calculate real road/haversine distance from detected coordinates
   const fetchMapPlaces = async (lat?: number, lng?: number) => {
     try {
-      setLoading(true);
+      if (places.length === 0) setLoading(true);
       const params: any = {};
       if (lat !== undefined && lng !== undefined && !isNaN(Number(lat)) && !isNaN(Number(lng))) {
         params.buyerLat = Number(lat);
         params.buyerLng = Number(lng);
       }
       const res = await api.get('/map/places', { params });
-      if (res.data?.success) {
-        setPlaces(res.data.places || []);
+      if (res.data?.success && Array.isArray(res.data.places)) {
+        setPlaces(res.data.places);
       }
     } catch (err: any) {
       console.error('Failed to load map data', err);
-      if (err?.code !== 'ERR_CANCELED') {
+      if (err?.code !== 'ERR_CANCELED' && places.length === 0) {
         showToast(err?.response?.data?.message || 'Could not load map places.', 'error');
       }
     } finally {
@@ -214,7 +240,8 @@ const MarketplaceMapPage: React.FC = () => {
           isInside,
           timestamp: Date.now(),
         });
-        fetchMapPlaces(clickedLat, clickedLng);
+        updatePlacesDistances(clickedLat, clickedLng);
+        if (places.length === 0) fetchMapPlaces(clickedLat, clickedLng);
         if (isInside) {
           showToast(`Location set (${clickedLat}, ${clickedLng}) — Inside Adama (Live tracking paused)`, 'success');
         } else {
@@ -341,7 +368,8 @@ const MarketplaceMapPage: React.FC = () => {
         isInside: inside,
         timestamp: Date.now(),
       });
-      fetchMapPlaces(newLat, newLng);
+      updatePlacesDistances(newLat, newLng);
+      if (places.length === 0) fetchMapPlaces(newLat, newLng);
       showToast(`Location set to (${newLat}, ${newLng}) — Live tracking paused`, 'success');
     });
 
@@ -426,8 +454,11 @@ const MarketplaceMapPage: React.FC = () => {
     setGpsError(null);
     setGpsLoading(false);
 
-    // Refresh distance calculations
-    fetchMapPlaces(lat, lng);
+    // Refresh distance calculations client-side and ensure places are populated
+    updatePlacesDistances(lat, lng);
+    if (places.length === 0) {
+      fetchMapPlaces(lat, lng);
+    }
 
     // Move map to the detected real GPS location
     if (mapInstanceRef.current && isFirstFix) {
