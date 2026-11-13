@@ -91,18 +91,64 @@ const cleanseProductImagesInDatabase = async () => {
       'Cap': 'https://images.unsplash.com/photo-1588850561407-ed78c282e89b?w=600&auto=format&fit=crop&q=80'
     };
 
+    // 2. Realistic market prices in Ethiopian Birr (ETB) based on Adama market conditions
+    const realisticProductPrices = {
+      'Used 3-Phase Industrial Electric Motor (5.5kW)': 18500,
+      'Used Corrugated Galvanized Iron Sheets (8 Pcs)': 3800,
+      'Heavy-Duty Used Plastic Water Barrels (200L - Blue)': 2100,
+      'Scrap Copper Wires (12kg Stripped Bright Copper)': 9600,
+      'Scrap Iron Rebar & Steel Rod Cutoffs (Bundle of 25)': 3200,
+      'Second-hand Electric Drill (Bosch 650W)': 3800,
+      'Heavy Duty Metal Filing Cabinet': 8500,
+      'Usable Pine Wood Pallets': 400,
+      'Everyday Pre-Shrunk Cotton Casual Shirt': 650,
+      'Premium Apostolic Typography Graphic T-Shirt': 850,
+      'Bible Verse Hoodie': 1850,
+      'Weather-Resistant Insulated Winter Jacket': 2600,
+      'High-Gloss Ceramic Tea Mug': 300,
+      'Inspirational Scripture Ceramic Coffee Cup': 380,
+      'Protective Handcrafted Leather Bible Cover Case': 1200,
+      'Kalu Ynager Biblical Doctrine Study Books': 450,
+      'Eco-Friendly Canvas Scripture Tote Bag': 420,
+      'Embroidered Apostolic Monogram Baseball Cap': 500,
+      'Classic Heavyweight Cotton Hoodie': 1950,
+      // Legacy aliases
+      'Shirt': 650,
+      'T-Shirt': 850,
+      'Jacket': 2600,
+      'Tea Mug': 300,
+      'Bible Verse Coffee Cup': 380,
+      'Bible Cover': 1200,
+      'Biblical Books': 450,
+      'Bible Verse Tote Bag': 420,
+      'Cap': 500,
+      'Hoodie': 1950,
+      'Hoddie': 1950,
+      'Bible Verse Hoddie': 1850
+    };
+
     const refreshedProducts = await Product.find({});
     for (const p of refreshedProducts) {
+      let changed = false;
       if (uniqueImagesByProduct[p.name]) {
         p.images = [uniqueImagesByProduct[p.name]];
-        await p.save({ validateBeforeSave: false });
+        changed = true;
       } else if (!p.images || p.images.length === 0 || !p.images[0]) {
         // Fallback to existing image field or default material photo only if completely empty
         p.images = [p.image || 'https://images.unsplash.com/photo-1742203900461-d822f8e7fd30?w=600&auto=format&fit=crop&q=80'];
+        changed = true;
+      }
+
+      if (realisticProductPrices[p.name] !== undefined && p.price !== realisticProductPrices[p.name]) {
+        p.price = realisticProductPrices[p.name];
+        changed = true;
+      }
+
+      if (changed) {
         await p.save({ validateBeforeSave: false });
       }
     }
-    console.log(`✅ Applied exact verified material imagery to ${refreshedProducts.length} products in DB.`);
+    console.log(`✅ Applied verified material imagery and realistic ETB pricing to ${refreshedProducts.length} products in DB.`);
   } catch (err) {
     console.warn('Product image cleanse note:', err.message);
   }
