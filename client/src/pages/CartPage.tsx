@@ -4,6 +4,8 @@ import { useAuth } from '../context/AuthContext';
 import { useCart } from '../context/CartContext';
 import { useToast } from '../context/ToastContext';
 import { Trash2, ArrowRight, ShoppingBag, ChevronLeft } from 'lucide-react';
+import { getMaterialFallbackImage } from '../utils/materialImages';
+import { formatETB } from '../utils/formatCurrency';
 
 const CartPage: React.FC = () => {
   const { user } = useAuth();
@@ -65,7 +67,16 @@ const CartPage: React.FC = () => {
               >
                 {/* Image */}
                 <div className="w-24 h-24 rounded-xl border border-slate-200 overflow-hidden flex-shrink-0 bg-slate-50">
-                  <img src={item.product.images[0]} alt={item.product.name} className="w-full h-full object-cover" />
+                  <img
+                    src={item.product.images?.[0] || getMaterialFallbackImage(item.product.name)}
+                    alt={item.product.name}
+                    className="w-full h-full object-cover"
+                    onError={(e) => {
+                      const target = e.currentTarget;
+                      target.onerror = null;
+                      target.src = getMaterialFallbackImage(item.product.name);
+                    }}
+                  />
                 </div>
                 {/* Details */}
                 <div className="flex-1 min-w-0">
@@ -76,7 +87,7 @@ const CartPage: React.FC = () => {
                     </span>
                     <span className="text-xs text-slate-400">Stock: {item.product.quantity}</span>
                   </div>
-                  <div className="text-primary-700 font-extrabold text-sm mt-3">{item.product.price} ETB</div>
+                  <div className="text-primary-700 font-extrabold text-sm mt-3">{formatETB(item.product.price)}</div>
                 </div>
                 {/* Quantity Selector */}
                 <div className="flex sm:flex-col items-center sm:items-end justify-between sm:justify-start w-full sm:w-auto gap-4 self-stretch sm:self-center">
@@ -116,7 +127,7 @@ const CartPage: React.FC = () => {
             <div className="space-y-4">
               <div className="flex justify-between text-sm text-slate-600">
                 <span>Items Subtotal</span>
-                <span className="font-bold text-slate-800">{subtotal.toLocaleString()} ETB</span>
+                <span className="font-bold text-slate-800">{formatETB(subtotal)}</span>
               </div>
               <div className="flex justify-between text-sm text-slate-600">
                 <span>Delivery Fee</span>
@@ -124,11 +135,11 @@ const CartPage: React.FC = () => {
               </div>
               <div className="border-t border-slate-100 pt-4 flex justify-between text-base font-extrabold text-slate-900">
                 <span>Estimated Total</span>
-                <span>{subtotal.toLocaleString()} ETB</span>
+                <span>{formatETB(subtotal)}</span>
               </div>
             </div>
             
-            {user && user.role !== 'BUYER' ? (
+            {user && ['ADMIN', 'STAFF', 'SELLER'].includes(user.role) ? (
               <div className="p-3.5 bg-amber-50 border border-amber-200 rounded-xl text-amber-900 text-xs">
                 <strong>Logged in as {user.role}:</strong> Purchasing materials is restricted to Buyer accounts. Please sign in as a Buyer to checkout.
               </div>
