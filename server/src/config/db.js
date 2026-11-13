@@ -5,6 +5,11 @@ const ensureApprovedProductsExist = require('../jobs/seedProducts');
 const cleanseProductImagesInDatabase = async () => {
   try {
     const Product = require('../models/Product');
+
+    // 1. Permanently heal legacy title misspellings in database
+    await Product.updateMany({ name: 'Bible Verse Hoddie' }, { $set: { name: 'Bible Verse Hoodie' } });
+    await Product.updateMany({ name: 'Hoddie' }, { $set: { name: 'Hoodie' } });
+
     const products = await Product.find({});
     if (!products || products.length === 0) return;
 
@@ -28,7 +33,8 @@ const cleanseProductImagesInDatabase = async () => {
       'Used 3-Piece Living Room Sofa Set (Grey Fabric)': 'https://images.unsplash.com/photo-1555041469-a586c61ea9bc?w=600&auto=format&fit=crop&q=80',
       'Used 5-Tier Solid Wood Bookshelf': 'https://images.unsplash.com/photo-1675241816662-faab5f4c3f88?w=600&auto=format&fit=crop&q=60&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxzZWFyY2h8MTJ8fFVzZWQlMjA1LVRpZXIlMjBTb2xpZCUyMFdvb2QlMjBCb29rc2hlbGZ8ZW58MHx8MHx8fDA%3D',
       'Used Glass-Top Coffee Table with Steel Legs': 'https://media.istockphoto.com/id/1034892940/photo/modern-glass-table-in-the-loft-interior.webp?a=1&b=1&s=612x612&w=0&k=20&c=S9VhLxdmRxgOoN04RzjwFkgB4-sl8vwAv5CvNWdimO8=',
-      'Used 3-Phase Industrial Electric Motor (5.5kW)': 'https://media.istockphoto.com/id/939597574/photo/the-group-pumps-at-the-water-pipe.webp?a=1&b=1&s=612x612&w=0&k=20&c=JS8bOn5XufjQMuwIZbShp6_ceWz09ZK2UoShiYmZtO4=',
+      // Verified authentic industrial electric induction motor (replacing previous water pipe photo)
+      'Used 3-Phase Industrial Electric Motor (5.5kW)': 'https://images.unsplash.com/photo-1581092160607-ee22621dd758?w=600&auto=format&fit=crop&q=80',
       'Used HP Pavilion 15\" Laptop (Core i7 / 16GB RAM / 512GB SSD)': 'https://images.unsplash.com/photo-1496181133206-80ce9b88a853?w=600&auto=format&fit=crop&q=80',
       'Used Apple iPhone 11 (64GB - White)': 'https://images.unsplash.com/photo-1726574778294-adfb9ee2e5ca?w=600&auto=format&fit=crop&q=60&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxzZWFyY2h8MjB8fFVzZWQlMjBBcHBsZSUyMGlQaG9uZSUyMDExJTIwKDY0R0IlMjAtJTIwV2hpdGUpfGVufDB8fDB8fHww',
       'Used Samsung 24\" Borderless IPS Monitor': 'https://images.unsplash.com/photo-1527443224154-c4a3942d3acf?w=600&auto=format&fit=crop&q=80',
@@ -43,21 +49,24 @@ const cleanseProductImagesInDatabase = async () => {
       'Salvaged Heavy Duty Aluminum Window Frames & Profiles': 'https://images.unsplash.com/photo-1719067720887-b55ecfdd21b2?w=600&auto=format&fit=crop&q=60&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1yZWxhdGVkfDEzfHx8ZW58MHx8fHx8',
       'Heavy Scrap Vehicle Leaf Springs & Axles (Approx 70kg)': 'https://images.unsplash.com/photo-1712045412870-e486f0bf93b2?w=600&auto=format&fit=crop&q=60&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxzZWFyY2h8MTB8fEhlYXZ5JTIwU2NyYXAlMjBWZWhpY2xlJTIwTGVhZiUyMFNwcmluZ3MlMjAlMjYlMjBBeGxlcyUyMChBcHByb3glMjA3MGtnKXxlbnwwfHwwfHx8MA%3D%3D',
       'Used High School Mathematics & Physics Textbooks': 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTT5O62YE3VZJLL6IEpEaxm60ajvi-BtKqeDgaeMeyAWQ&s',
-      // Legacy catalog mappings with authentic verified imagery
+      // Legacy catalog mappings with authentic verified imagery and corrected spellings
       'Tea Mug': 'https://images.unsplash.com/photo-1514432324607-a09d9b4aefdd?w=600&auto=format&fit=crop&q=80',
       'Bible Verse Coffee Cup': 'https://images.unsplash.com/photo-1517256064527-09c73fc73e38?w=600&auto=format&fit=crop&q=80',
       'Shirt': 'https://images.unsplash.com/photo-1596755094514-f87e34085b2c?w=600&auto=format&fit=crop&q=80',
       'T-Shirt': 'https://images.unsplash.com/photo-1521572267360-ee0c2909d518?w=600&auto=format&fit=crop&q=80',
       'Jacket': 'https://images.unsplash.com/photo-1551028719-00167b16eac5?w=600&auto=format&fit=crop&q=80',
-      'Bible Verse Tote Bag': 'https://images.unsplash.com/photo-1597484662317-9bd7bdda2907?w=600&auto=format&fit=crop&q=80',
+      'Bible Verse Tote Bag': 'https://images.unsplash.com/photo-1544816155-12df9643f363?w=600&auto=format&fit=crop&q=80',
+      'Bible Verse Hoodie': 'https://images.unsplash.com/photo-1556905055-8f358a7a47b2?w=600&auto=format&fit=crop&q=80',
       'Bible Verse Hoddie': 'https://images.unsplash.com/photo-1556905055-8f358a7a47b2?w=600&auto=format&fit=crop&q=80',
-      'Hoddie': 'https://images.unsplash.com/photo-1556905055-8f358a7a47b2?w=600&auto=format&fit=crop&q=80',
+      'Hoodie': 'https://images.unsplash.com/photo-1509967419530-da38b4704bc6?w=600&auto=format&fit=crop&q=80',
+      'Hoddie': 'https://images.unsplash.com/photo-1509967419530-da38b4704bc6?w=600&auto=format&fit=crop&q=80',
       'Biblical Books': 'https://images.unsplash.com/photo-1544716278-ca5e3f4abd8c?w=600&auto=format&fit=crop&q=80',
-      'Bible Cover': 'https://images.unsplash.com/photo-1589829085413-56de8ae18c73?w=600&auto=format&fit=crop&q=80',
+      'Bible Cover': 'https://images.unsplash.com/photo-1544947950-fa07a98d237f?w=600&auto=format&fit=crop&q=80',
       'Cap': 'https://images.unsplash.com/photo-1588850561407-ed78c282e89b?w=600&auto=format&fit=crop&q=80'
     };
 
-    for (const p of products) {
+    const refreshedProducts = await Product.find({});
+    for (const p of refreshedProducts) {
       if (uniqueImagesByProduct[p.name]) {
         p.images = [uniqueImagesByProduct[p.name]];
         await p.save({ validateBeforeSave: false });
@@ -67,7 +76,7 @@ const cleanseProductImagesInDatabase = async () => {
         await p.save({ validateBeforeSave: false });
       }
     }
-    console.log(`✅ Applied exact verified material imagery to ${products.length} products in DB.`);
+    console.log(`✅ Applied exact verified material imagery to ${refreshedProducts.length} products in DB.`);
   } catch (err) {
     console.warn('Product image cleanse note:', err.message);
   }
