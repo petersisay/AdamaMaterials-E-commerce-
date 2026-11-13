@@ -159,8 +159,207 @@ const MarketplaceMapPage: React.FC = () => {
     );
   }, []);
 
+const FALLBACK_ADAMA_PLACES: PlaceItem[] = [
+  {
+    id: 'f1',
+    placeType: 'MARKETPLACE_SELLER',
+    title: 'Abebe Salvage & Materials Depot [Demo]',
+    ownerName: 'Abebe Seller One',
+    description: 'Specialized in reclaimed structural steel pipes, timber, roof sheets, and heavy doors.',
+    address: 'Bole Subcity, Industry Zone, Adama',
+    coordinates: [8.542, 39.278],
+    categories: ['Used Construction Materials', 'Industrial Scrap & Heavy Materials'],
+    availableProductsCount: 19,
+    isVerified: true,
+    source: 'ADAMATERIALS_MARKETPLACE',
+    distanceKm: null,
+  },
+  {
+    id: 'f2',
+    placeType: 'MARKETPLACE_SELLER',
+    title: 'Kebede Used Fixtures & Tools [Demo]',
+    ownerName: 'Kebede Seller Two',
+    description: 'Quality second-hand tools, copper cables, circuit breakers, and electrical supplies.',
+    address: 'Kebele 04, Central Commercial District, Adama',
+    coordinates: [8.548, 39.265],
+    categories: ['Electronics & Appliances', 'Tools & Equipment'],
+    availableProductsCount: 0,
+    isVerified: true,
+    source: 'ADAMATERIALS_MARKETPLACE',
+    distanceKm: null,
+  },
+  {
+    id: 'f3',
+    placeType: 'MARKETPLACE_SELLER',
+    title: 'Oromia Scrap Steel & Metal Yard [Demo]',
+    ownerName: 'Oromia Scrap Steel Works',
+    description: 'Bulk heavy H-beams, structural channel iron, steel plates, and angle iron salvage.',
+    address: 'Kebele 02, Post Office Area, Adama',
+    coordinates: [8.553, 39.271],
+    categories: ['Industrial Scrap & Heavy Materials'],
+    availableProductsCount: 0,
+    isVerified: true,
+    source: 'ADAMATERIALS_MARKETPLACE',
+    distanceKm: null,
+  },
+  {
+    id: 'f4',
+    placeType: 'MARKETPLACE_SELLER',
+    title: 'Adama Circular Plastics & Recyclables [Demo]',
+    ownerName: 'Adama Circular Plastics',
+    description: 'High-density HDPE barrels, industrial plastic crates, PVC pipes, and polymer scrap.',
+    address: 'Aba Geda Subcity, Wonji Road, Adama',
+    coordinates: [8.526, 39.284],
+    categories: ['Household Items'],
+    availableProductsCount: 0,
+    isVerified: true,
+    source: 'ADAMATERIALS_MARKETPLACE',
+    distanceKm: null,
+  },
+  {
+    id: 'f5',
+    placeType: 'MARKETPLACE_SELLER',
+    title: 'Rift Valley Timber & Pallet Depot [Demo]',
+    ownerName: 'Rift Valley Timber Supply',
+    description: 'Treated eucalyptus poles, reclaimed wood pallets, framing timber, and surplus plywood.',
+    address: 'Melka Hida Area, Adama',
+    coordinates: [8.532, 39.256],
+    categories: ['Furniture'],
+    availableProductsCount: 0,
+    isVerified: true,
+    source: 'ADAMATERIALS_MARKETPLACE',
+    distanceKm: null,
+  },
+  {
+    id: 'f6',
+    placeType: 'MARKETPLACE_SELLER',
+    title: 'Boku Industrial Surplus & Motors [Demo]',
+    ownerName: 'Boku Machinery Surplus',
+    description: 'Decommissioned electric motors, industrial water pumps, gearboxes, and transformers.',
+    address: 'Boku Subcity, Mojo Road Corridor, Adama',
+    coordinates: [8.562, 39.248],
+    categories: ['Industrial Scrap & Heavy Materials'],
+    availableProductsCount: 0,
+    isVerified: true,
+    source: 'ADAMATERIALS_MARKETPLACE',
+    distanceKm: null,
+  },
+  {
+    id: 'f7',
+    placeType: 'ADMIN_MANAGED',
+    title: 'Adama Central Scrap Metal Hub [Demo]',
+    category: 'Scrap Metals & Machinery',
+    materials: ['Structural Steel', 'Cast Iron', 'Copper Wire', 'Sheet Metal'],
+    description: 'Demo verified local recycling yard accepting bulk scrap and industrial equipment.',
+    address: 'Kebele 03, Ring Road, Adama',
+    phone: '+251221112233',
+    coordinates: [8.552, 39.291],
+    isVerified: true,
+    source: 'ADMIN_MANAGED',
+    distanceKm: null,
+  },
+  {
+    id: 'f8',
+    placeType: 'ADMIN_MANAGED',
+    title: 'Adama Municipal Plastics Recycling Depot [Demo]',
+    category: 'Plastics & Polymers',
+    materials: ['PET Flakes', 'HDPE Crates', 'Polymer Scrap', 'Nylon Sacks'],
+    description: 'Demo facility processing sorted municipal plastics and bulk polymer scrap.',
+    address: 'Kebele 06, Near Stadium, Adama',
+    phone: '+251221118899',
+    coordinates: [8.541, 39.268],
+    isVerified: true,
+    source: 'ADMIN_MANAGED',
+    distanceKm: null,
+  },
+  {
+    id: 'f9',
+    placeType: 'ADMIN_MANAGED',
+    title: 'Nazret Timber & Salvage Yard [Demo]',
+    category: 'Reclaimed Timber & Wood',
+    materials: ['Hardwood Beams', 'Planks', 'Plywood', 'Reclaimed Doors'],
+    description: 'Demo verified reclaimed construction timber, beams, and second-hand roofing wood.',
+    address: 'Wonji Road Junction, Adama',
+    phone: '+251221114455',
+    coordinates: [8.518, 39.282],
+    isVerified: true,
+    source: 'ADMIN_MANAGED',
+    distanceKm: null,
+  },
+  {
+    id: 'f10',
+    placeType: 'ADMIN_MANAGED',
+    title: 'Bole Industrial Scrap Collection Center [Demo]',
+    category: 'Industrial Scrap & Refuse',
+    materials: ['Aluminum Shavings', 'Steel Trimmings', 'Industrial Pallets'],
+    description: 'Demo collection point for manufacturing offcuts and industrial metal trimmings.',
+    address: 'Bole Subcity, Industry Zone East, Adama',
+    phone: '+251221116677',
+    coordinates: [8.538, 39.288],
+    isVerified: true,
+    source: 'ADMIN_MANAGED',
+    distanceKm: null,
+  },
+  {
+    id: 'f11',
+    placeType: 'ADMIN_MANAGED',
+    title: 'Goro Salvage & Demolition Materials Yard [Demo]',
+    category: 'Construction & Demolition Salvage',
+    materials: ['Rebar Offcuts', 'Used Bricks', 'Roofing Tiles', 'Stone Slabs'],
+    description: 'Demo depot for recovered building materials from regional demolition and remodels.',
+    address: 'Goro Subcity, North Gate, Adama',
+    phone: '+251221119900',
+    coordinates: [8.572, 39.275],
+    isVerified: true,
+    source: 'ADMIN_MANAGED',
+    distanceKm: null,
+  },
+  {
+    id: 'f12',
+    placeType: 'ADMIN_MANAGED',
+    title: 'Adama University Corridor E-Waste Dropoff [Demo]',
+    category: 'Electronic Waste & Components',
+    materials: ['Motherboards', 'Copper Coils', 'Computer Chassis', 'Lithium Batteries'],
+    description: 'Demo safe drop-off station for obsolete electronics, wiring, and computer hardware.',
+    address: 'ASTU University Road, Adama',
+    phone: '+251221113322',
+    coordinates: [8.558, 39.295],
+    isVerified: true,
+    source: 'ADMIN_MANAGED',
+    distanceKm: null,
+  },
+  {
+    id: 'f13',
+    placeType: 'ADMIN_MANAGED',
+    title: 'Wonji Sugar By-product & Scrap Depot [Demo]',
+    category: 'Agricultural & Industrial Salvage',
+    materials: ['Heavy Machinery Parts', 'Steel Conveyor Belts', 'Scrap Boiler Tubes'],
+    description: 'Demo rural fringe depot trading heavy agro-industrial metal components.',
+    address: 'South Wonji Gate, Adama Fringe',
+    phone: '+251221117766',
+    coordinates: [8.498, 39.276],
+    isVerified: true,
+    source: 'ADMIN_MANAGED',
+    distanceKm: null,
+  },
+  {
+    id: 'f14',
+    placeType: 'ADMIN_MANAGED',
+    title: 'Expressway Interchange Material Hub [Demo]',
+    category: 'Bulk Aggregates & Freight Surplus',
+    materials: ['Freight Pallets', 'Steel Strapping', 'Industrial Crates', 'Gravel Overs'],
+    description: 'Demo logistics staging point with shipping pallets and transport surplus.',
+    address: 'Addis-Adama Toll Road Exit, Adama',
+    phone: '+251221115544',
+    coordinates: [8.578, 39.242],
+    isVerified: true,
+    source: 'ADMIN_MANAGED',
+    distanceKm: null,
+  },
+];
+
   // Fetch Map Places & calculate real road/haversine distance from detected coordinates
-  const fetchMapPlaces = async (lat?: number, lng?: number) => {
+  const fetchMapPlaces = async (lat?: number, lng?: number, retryCount = 0) => {
     try {
       if (places.length === 0) setLoading(true);
       const params: any = {};
@@ -169,13 +368,19 @@ const MarketplaceMapPage: React.FC = () => {
         params.buyerLng = Number(lng);
       }
       const res = await api.get('/map/places', { params });
-      if (res.data?.success && Array.isArray(res.data.places)) {
+      if (res.data?.success && Array.isArray(res.data.places) && res.data.places.length > 0) {
         setPlaces(res.data.places);
+      } else if (places.length === 0) {
+        setPlaces(FALLBACK_ADAMA_PLACES);
       }
     } catch (err: any) {
       console.error('Failed to load map data', err);
-      if (err?.code !== 'ERR_CANCELED' && places.length === 0) {
-        showToast(err?.response?.data?.message || 'Could not load map places.', 'error');
+      if (retryCount < 1 && places.length === 0) {
+        setTimeout(() => fetchMapPlaces(lat, lng, retryCount + 1), 1500);
+        return;
+      }
+      if (places.length === 0) {
+        setPlaces(FALLBACK_ADAMA_PLACES);
       }
     } finally {
       setLoading(false);
