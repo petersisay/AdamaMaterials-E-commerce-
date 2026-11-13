@@ -46,6 +46,33 @@ async function ensureApprovedProductsExist() {
       await Product.updateMany({ name: oldName }, { $set: { name: newName } });
     }
 
+    // 2. Apply realistic ETB market prices
+    const realisticProductPrices = {
+      'Used 3-Phase Industrial Electric Motor (5.5kW)': 18500,
+      'Used Corrugated Galvanized Iron Sheets (8 Pcs)': 3800,
+      'Heavy-Duty Used Plastic Water Barrels (200L - Blue)': 2100,
+      'Scrap Copper Wires (12kg Stripped Bright Copper)': 9600,
+      'Scrap Iron Rebar & Steel Rod Cutoffs (Bundle of 25)': 3200,
+      'Second-hand Electric Drill (Bosch 650W)': 3800,
+      'Heavy Duty Metal Filing Cabinet': 8500,
+      'Usable Pine Wood Pallets': 400,
+      'Everyday Pre-Shrunk Cotton Casual Shirt': 650,
+      'Premium Apostolic Typography Graphic T-Shirt': 850,
+      'Bible Verse Hoodie': 1850,
+      'Weather-Resistant Insulated Winter Jacket': 2600,
+      'High-Gloss Ceramic Tea Mug': 300,
+      'Inspirational Scripture Ceramic Coffee Cup': 380,
+      'Protective Handcrafted Leather Bible Cover Case': 1200,
+      'Kalu Ynager Biblical Doctrine Study Books': 450,
+      'Eco-Friendly Canvas Scripture Tote Bag': 420,
+      'Embroidered Apostolic Monogram Baseball Cap': 500,
+      'Classic Heavyweight Cotton Hoodie': 1950,
+    };
+
+    for (const [prodName, realPrice] of Object.entries(realisticProductPrices)) {
+      await Product.updateMany({ name: prodName, price: { $ne: realPrice } }, { $set: { price: realPrice } });
+    }
+
     // If we already have 5 or more approved products, check and return
     const approvedCount = await Product.countDocuments({ approvalStatus: 'APPROVED' });
     if (approvedCount >= 5) {
@@ -169,7 +196,7 @@ async function ensureApprovedProductsExist() {
       {
         name: 'Usable Pine Wood Pallets',
         description: 'Batch of 10 clean pine wood pallets. Great for building scrap wood furniture or storage shelving.',
-        price: 450,
+        price: 400,
         quantity: 8,
         category: furnitureCat._id,
         materialType: woodMat._id,
@@ -182,7 +209,7 @@ async function ensureApprovedProductsExist() {
       {
         name: 'Heavy Duty Metal Filing Cabinet',
         description: 'Solid steel 4-drawer filing cabinet in Excellent condition. Keys are included.',
-        price: 2500,
+        price: 8500,
         quantity: 2,
         category: furnitureCat._id,
         materialType: metalMat._id,
@@ -195,7 +222,7 @@ async function ensureApprovedProductsExist() {
       {
         name: 'Used Solid Wood Office Desk',
         description: 'Sturdy hardwood office desk with 3 lockable side drawers. Minor surface scratches but structurally very solid.',
-        price: 3200,
+        price: 4200,
         quantity: 1,
         category: furnitureCat._id,
         materialType: woodMat._id,
@@ -208,7 +235,7 @@ async function ensureApprovedProductsExist() {
       {
         name: 'Used Ergonomic Mesh Swivel Chair',
         description: 'Adjustable height office chair with breathable mesh back and lumbar support. All hydraulics functioning well.',
-        price: 1800,
+        price: 2400,
         quantity: 3,
         category: furnitureCat._id,
         materialType: plasticMat._id,
@@ -221,7 +248,7 @@ async function ensureApprovedProductsExist() {
       {
         name: 'Second-hand Electric Drill (Bosch 650W)',
         description: 'Tested and working Bosch impact drill with chuck key. Ideal for woodworking and home maintenance.',
-        price: 1800,
+        price: 3800,
         quantity: 2,
         category: toolsCat._id,
         materialType: metalMat._id,
@@ -234,7 +261,7 @@ async function ensureApprovedProductsExist() {
       {
         name: 'Scrap Iron Rebar & Steel Rod Cutoffs (Bundle of 25)',
         description: 'Assorted steel rebar offcuts from 10mm to 16mm diameter. Lengths range from 1m to 2.5m.',
-        price: 1500,
+        price: 3200,
         quantity: 4,
         category: constCat._id,
         materialType: metalMat._id,
@@ -247,7 +274,7 @@ async function ensureApprovedProductsExist() {
       {
         name: 'Scrap Copper Wires (12kg Stripped Bright Copper)',
         description: 'Clean stripped scrap copper electrical wire suitable for recycling or custom wiring work.',
-        price: 3600,
+        price: 9600,
         quantity: 1,
         category: heavyCat._id,
         materialType: metalMat._id,
@@ -260,7 +287,7 @@ async function ensureApprovedProductsExist() {
       {
         name: 'Heavy-Duty Used Plastic Water Barrels (200L - Blue)',
         description: 'Food-grade HDPE blue barrels with clamp lids. Cleaned and rinsed, ready for water or liquid storage.',
-        price: 950,
+        price: 2100,
         quantity: 6,
         category: houseCat._id,
         materialType: plasticMat._id,
@@ -273,7 +300,7 @@ async function ensureApprovedProductsExist() {
       {
         name: 'Used Corrugated Galvanized Iron Sheets (8 Pcs)',
         description: 'Reclaimed G-32 roofing zinc sheets with minimal nail holes. Length: 2.5m each.',
-        price: 2800,
+        price: 3800,
         quantity: 2,
         category: constCat._id,
         materialType: metalMat._id,
@@ -286,7 +313,7 @@ async function ensureApprovedProductsExist() {
       {
         name: 'Used Dell Latitude 14" Laptop (Core i5 / 8GB RAM / 256GB SSD)',
         description: 'Tested and cleaned office laptop. Battery holds 3+ hours charge, includes original charger.',
-        price: 14500,
+        price: 16500,
         quantity: 2,
         category: elecCat._id,
         materialType: elecMat._id,
@@ -299,7 +326,7 @@ async function ensureApprovedProductsExist() {
       {
         name: 'Clean Recycled PET Bottle Bales (50kg)',
         description: 'Sorted, crushed and baled clear PET beverage bottles. Dry and uncontaminated.',
-        price: 1200,
+        price: 1500,
         quantity: 5,
         category: houseCat._id,
         materialType: plasticMat._id,
@@ -312,7 +339,7 @@ async function ensureApprovedProductsExist() {
       {
         name: 'Used 3-Phase Industrial Electric Motor (5.5kW)',
         description: 'Reliable Siemens industrial induction motor. Tested coils and bearings, ready for pump or milling use.',
-        price: 8500,
+        price: 18500,
         quantity: 1,
         category: heavyCat._id,
         materialType: metalMat._id,
