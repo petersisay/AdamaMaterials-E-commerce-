@@ -330,12 +330,21 @@ exports.updateProduct = asyncHandler(async (req, res, next) => {
     return next(new AppError('Product not found.', 404));
   }
 
-  if (product.seller.toString() !== req.user._id.toString()) {
-    return next(new AppError('You do not own this product.', 403));
+  const isOwner = (product.seller?._id || product.seller).toString() === req.user._id.toString();
+  const isAdmin = req.user && req.user.role === 'ADMIN';
+
+  if (!isOwner && !isAdmin) {
+    return next(new AppError('You do not have permission to edit this product.', 403));
   }
 
-  if (['APPROVED', 'PENDING_APPROVAL'].includes(product.approvalStatus)) {
-    product.approvalStatus = 'DRAFT';
+  let newApprovalStatus = product.approvalStatus;
+  if (isAdmin && req.body.approvalStatus) {
+    newApprovalStatus = req.body.approvalStatus;
+  } else if (!isAdmin && (req.body.name || req.body.images)) {
+    // If title or images change fundamentally, require admin review
+    if (['APPROVED', 'PENDING_APPROVAL'].includes(product.approvalStatus)) {
+      newApprovalStatus = 'DRAFT';
+    }
   }
 
   // Validate realistic pricing & quantity if updated
@@ -356,13 +365,13 @@ exports.updateProduct = asyncHandler(async (req, res, next) => {
 
   const updatedProduct = await Product.findByIdAndUpdate(
     req.params.id,
-    { ...req.body, seller: req.user._id, approvalStatus: product.approvalStatus },
+    { ...req.body, seller: product.seller, approvalStatus: newApprovalStatus },
     { new: true, runValidators: true }
   );
 
   res.status(200).json({
     success: true,
-    message: 'Product updated and moved to DRAFT. Please submit for approval.',
+    message: newApprovalStatus === 'APPROVED' ? 'Product updated successfully.' : 'Product updated and moved to DRAFT. Please submit for approval.',
     product: updatedProduct,
   });
 });
@@ -375,8 +384,11 @@ exports.deleteProduct = asyncHandler(async (req, res, next) => {
     return next(new AppError('Product not found.', 404));
   }
 
-  if (product.seller.toString() !== req.user._id.toString()) {
-    return next(new AppError('You do not own this product.', 403));
+  const isOwner = (product.seller?._id || product.seller).toString() === req.user._id.toString();
+  const isAdmin = req.user && req.user.role === 'ADMIN';
+
+  if (!isOwner && !isAdmin) {
+    return next(new AppError('You do not have permission to delete this product.', 403));
   }
 
   await product.deleteOne();
