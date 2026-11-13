@@ -15,6 +15,8 @@ import {
 } from 'lucide-react';
 import api from '../services/api';
 import LocationPickerModal from '../components/LocationPickerModal';
+import { getMaterialFallbackImage } from '../utils/materialImages';
+import { formatETB } from '../utils/formatCurrency';
 
 const CheckoutPage: React.FC = () => {
   const { user } = useAuth();
@@ -53,8 +55,8 @@ const CheckoutPage: React.FC = () => {
 
   // Load saved addresses and cart validation
   useEffect(() => {
-    if (!user || user.role !== 'BUYER') {
-      showToast('Only BUYER accounts can checkout and place orders.', 'warning');
+    if (!user || ['ADMIN', 'STAFF', 'SELLER'].includes(user.role)) {
+      showToast('Purchasing materials is restricted to Buyer accounts.', 'warning');
       navigate(user?.role === 'SELLER' ? '/seller-dashboard' : '/products');
       return;
     }
@@ -544,18 +546,27 @@ const CheckoutPage: React.FC = () => {
             {items.map((item) => (
               <div key={item.product._id} className="py-3 flex gap-3 text-xs">
                 <div className="w-12 h-12 rounded-lg border border-slate-100 overflow-hidden bg-slate-50 flex-shrink-0">
-                  <img src={item.product.images[0]} alt="" className="w-full h-full object-cover" />
+                  <img
+                    src={item.product.images?.[0] || getMaterialFallbackImage(item.product.name)}
+                    alt=""
+                    className="w-full h-full object-cover"
+                    onError={(e) => {
+                      const target = e.currentTarget;
+                      target.onerror = null;
+                      target.src = getMaterialFallbackImage(item.product.name);
+                    }}
+                  />
                 </div>
                 <div className="flex-1 min-w-0">
                   <div className="font-semibold text-slate-800 line-clamp-1">
                     {item.product.name}
                   </div>
                   <div className="text-slate-400 mt-0.5">
-                    {item.quantity} x {item.product.price} ETB
+                    {item.quantity} x {formatETB(item.product.price)}
                   </div>
                 </div>
                 <div className="font-bold text-slate-800 self-center">
-                  {(item.quantity * item.product.price).toLocaleString()} ETB
+                  {formatETB(item.quantity * item.product.price)}
                 </div>
               </div>
             ))}
@@ -564,14 +575,14 @@ const CheckoutPage: React.FC = () => {
           <div className="border-t border-slate-100 pt-4 space-y-3 text-xs">
             <div className="flex justify-between text-slate-500">
               <span>Items Subtotal</span>
-              <span className="font-bold text-slate-700">{subtotal.toLocaleString()} ETB</span>
+              <span className="font-bold text-slate-700">{formatETB(subtotal)}</span>
             </div>
 
             <div className="space-y-1 bg-slate-50 border border-slate-200/80 p-3 rounded-xl">
               <div className="flex justify-between items-center">
                 <span className="font-bold text-slate-700">Calculated Delivery Fee</span>
                 <span className="font-extrabold text-primary-900 text-sm">
-                  {estimatedFee !== null ? `${estimatedFee.toLocaleString()} ETB` : '100 ETB'}
+                  {estimatedFee !== null ? formatETB(estimatedFee) : formatETB(100)}
                 </span>
               </div>
 
@@ -602,7 +613,7 @@ const CheckoutPage: React.FC = () => {
             <div className="border-t border-slate-100 pt-3 flex justify-between text-sm font-extrabold text-slate-950">
               <span>Total Amount Due</span>
               <span className="text-primary-900 text-base">
-                {(subtotal + (estimatedFee !== null ? estimatedFee : 100)).toLocaleString()} ETB
+                {formatETB(subtotal + (estimatedFee !== null ? estimatedFee : 100))}
               </span>
             </div>
           </div>
