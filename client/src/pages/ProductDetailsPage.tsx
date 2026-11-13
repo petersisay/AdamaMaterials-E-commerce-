@@ -6,6 +6,7 @@ import { useToast } from '../context/ToastContext';
 import { ChevronLeft, ShoppingCart, ShieldAlert, Star, MapPin, Tag, Box, Heart, RefreshCw } from 'lucide-react';
 import api from '../services/api';
 import { getMaterialFallbackImage } from '../utils/materialImages';
+import { formatETB } from '../utils/formatCurrency';
 
 const ProductDetailsPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -64,8 +65,8 @@ const ProductDetailsPage: React.FC = () => {
       return;
     }
 
-    if (user.role !== 'BUYER') {
-      showToast('Only BUYERS can purchase items.', 'warning');
+    if (['ADMIN', 'STAFF', 'SELLER'].includes(user.role)) {
+      showToast('Purchasing materials is restricted to Buyer accounts.', 'warning');
       return;
     }
 
@@ -187,7 +188,7 @@ const ProductDetailsPage: React.FC = () => {
           </div>
 
           <div className="text-2xl font-black text-primary-900">
-            {Number(product.price || 0).toLocaleString()} ETB
+            {formatETB(product.price)}
             <span className="text-xs font-semibold text-slate-400 block mt-1">Managed escrow payment</span>
           </div>
 
@@ -209,10 +210,10 @@ const ProductDetailsPage: React.FC = () => {
           <p className="text-sm text-slate-600 leading-relaxed">{product.description}</p>
 
           {/* Checkout controls */}
-          {user && user.role !== 'BUYER' ? (
+          {user && ['ADMIN', 'STAFF', 'SELLER'].includes(user.role) ? (
             <div className="p-4 bg-amber-50 border border-amber-200 rounded-2xl text-amber-900 text-xs flex flex-col gap-1">
               <span className="font-bold text-amber-950">Logged in as {user.role} ({user.name})</span>
-              <span>Only registered <strong>BUYER</strong> accounts are authorized to purchase materials. If you wish to purchase, please sign in with a Buyer account.</span>
+              <span>Purchasing materials is restricted to Buyer accounts. If you wish to purchase, please sign in with a Buyer account.</span>
             </div>
           ) : product.quantity > 0 ? (
             <div className="space-y-4 pt-2">
@@ -311,7 +312,7 @@ const ProductDetailsPage: React.FC = () => {
                 <div className="p-4 flex-1 flex flex-col justify-between">
                   <h4 className="font-bold text-slate-900 text-xs line-clamp-1 group-hover:text-primary-600 transition-colors">{p.name}</h4>
                   <div className="flex items-center justify-between mt-3 pt-3 border-t border-slate-100">
-                    <span className="text-primary-700 font-extrabold text-xs">{p.price} ETB</span>
+                    <span className="text-primary-700 font-extrabold text-xs">{formatETB(p.price)}</span>
                   </div>
                 </div>
               </Link>
