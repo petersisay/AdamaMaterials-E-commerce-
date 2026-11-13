@@ -3,6 +3,7 @@ import { useSearchParams } from 'react-router-dom';
 import { useToast } from '../context/ToastContext';
 import { ShoppingBag, Truck, AlertTriangle, MessageSquare, Star, Landmark, ChevronRight, X, AlertCircle, HelpCircle } from 'lucide-react';
 import api from '../services/api';
+import { formatETB } from '../utils/formatCurrency';
 
 const BuyerDashboard: React.FC = () => {
   const [searchParams] = useSearchParams();
@@ -234,7 +235,7 @@ const BuyerDashboard: React.FC = () => {
                 <div className="space-y-1">
                   <div className="font-bold text-slate-800 text-xs">{o.trackingNumber}</div>
                   <div className="text-[10px] text-slate-400 font-bold uppercase">{o.paymentMethod.replace('_', ' ')}</div>
-                  <div className="text-slate-500 font-extrabold text-xs">{o.total.toLocaleString()} ETB</div>
+                  <div className="text-slate-600 font-extrabold text-xs">{formatETB(o.total)}</div>
                 </div>
                 <div className="flex items-center gap-1">
                   <span className={`text-[9px] font-bold px-2 py-0.5 rounded-full uppercase ${
@@ -324,7 +325,7 @@ const BuyerDashboard: React.FC = () => {
                 </div>
 
                 <div className="text-xs text-amber-900 space-y-2 bg-white/70 p-3.5 rounded-xl border border-amber-200/60">
-                  <p className="font-semibold text-slate-800">Please transfer <strong>{selectedOrder.total?.toLocaleString()} ETB</strong> to:</p>
+                  <p className="font-semibold text-slate-800">Please transfer <strong>{formatETB(selectedOrder.total)}</strong> to:</p>
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-slate-700 font-mono text-[11px]">
                     <div className="p-2 bg-slate-50 rounded-lg border border-slate-200">
                       <span className="block text-[10px] text-slate-400 font-sans font-bold uppercase">CBE Bank</span>
@@ -406,7 +407,7 @@ const BuyerDashboard: React.FC = () => {
                       </div>
                       <div>
                         <div className="font-semibold text-slate-800 text-xs">{item.name}</div>
-                        <div className="text-[10px] text-slate-400 mt-0.5">{item.quantity} x {item.price} ETB</div>
+                        <div className="text-[10px] text-slate-400 mt-0.5">{item.quantity} x {formatETB(item.price)}</div>
                       </div>
                     </div>
                     
@@ -453,9 +454,9 @@ const BuyerDashboard: React.FC = () => {
               </div>
               <div className="space-y-1 text-right sm:text-right">
                 <span className="font-bold text-slate-800 block mb-1">Payment Breakdowns:</span>
-                <div>Subtotal: {selectedOrder.subtotal.toLocaleString()} ETB</div>
-                <div>Delivery Fee: {selectedOrder.deliveryFee.toLocaleString()} ETB</div>
-                <div className="font-extrabold text-sm text-primary-900 mt-1">Total: {selectedOrder.total.toLocaleString()} ETB</div>
+                <div>Subtotal: {formatETB(selectedOrder.subtotal)}</div>
+                <div>Delivery Fee: {formatETB(selectedOrder.deliveryFee)}</div>
+                <div className="font-extrabold text-sm text-primary-900 mt-1">Total: {formatETB(selectedOrder.total)}</div>
               </div>
             </div>
           </div>
