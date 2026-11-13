@@ -3,6 +3,7 @@ import { useSearchParams, Link } from 'react-router-dom';
 import { Search, SlidersHorizontal, ChevronLeft, ChevronRight, RotateCcw } from 'lucide-react';
 import api from '../services/api';
 import { getMaterialFallbackImage } from '../utils/materialImages';
+import { formatETB } from '../utils/formatCurrency';
 
 const CatalogPage: React.FC = () => {
   const [searchParams, setSearchParams] = useSearchParams();
@@ -311,11 +312,11 @@ const CatalogPage: React.FC = () => {
                     <div className="p-5 flex-1 flex flex-col justify-between">
                       <div>
                         <span className="text-[10px] text-slate-400 uppercase font-bold tracking-wider">{p.category?.name || 'Category'}</span>
-                        <h4 className="font-bold text-slate-900 text-sm line-clamp-1 group-hover:text-primary-600 transition-colors mt-0.5">{p.name}</h4>
+                        <h4 className="font-bold text-slate-900 text-sm line-clamp-2 min-h-[2.5rem] group-hover:text-primary-600 transition-colors mt-0.5">{p.name}</h4>
                         <p className="text-xs text-slate-500 mt-1 line-clamp-2 leading-relaxed">{p.description}</p>
                       </div>
                       <div className="flex items-center justify-between mt-4 pt-4 border-t border-slate-100">
-                        <span className="text-primary-700 font-extrabold text-sm">{p.price} ETB</span>
+                        <span className="text-primary-700 font-extrabold text-sm">{formatETB(p.price)}</span>
                         <span className="text-[10px] bg-slate-100 px-2 py-0.5 rounded-full font-bold text-slate-600">
                           {p.materialType?.name || 'Material'}
                         </span>
