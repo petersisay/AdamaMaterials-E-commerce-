@@ -19,6 +19,7 @@ const User = require('../models/User');
 const Category = require('../models/Category');
 const MaterialType = require('../models/MaterialType');
 const Product = require('../models/Product');
+const Migration = require('../models/Migration');
 
 /**
  * Idempotent seeder that guarantees approved materials exist in the catalog.
@@ -69,8 +70,15 @@ async function ensureApprovedProductsExist() {
       'Classic Heavyweight Cotton Hoodie': 1950,
     };
 
-    for (const [prodName, realPrice] of Object.entries(realisticProductPrices)) {
-      await Product.updateMany({ name: prodName, price: { $ne: realPrice } }, { $set: { price: realPrice } });
+    const pricingMigration = await Migration.findOne({ key: 'v1_initial_realistic_pricing' });
+    if (!pricingMigration) {
+      for (const [prodName, realPrice] of Object.entries(realisticProductPrices)) {
+        await Product.updateMany({ name: prodName, price: { $ne: realPrice } }, { $set: { price: realPrice } });
+      }
+      await Migration.create({
+        key: 'v1_initial_realistic_pricing',
+        details: 'Applied baseline realistic ETB product prices for initial catalog products',
+      });
     }
 
     // If we already have 5 or more approved products, check and return
