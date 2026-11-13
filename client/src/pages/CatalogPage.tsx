@@ -12,6 +12,7 @@ const CatalogPage: React.FC = () => {
   const [materialTypes, setMaterialTypes] = useState<any[]>([]);
   
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const [total, setTotal] = useState(0);
   const [pages, setPages] = useState(1);
 
@@ -31,9 +32,9 @@ const CatalogPage: React.FC = () => {
     api.get('/material-types').then(res => setMaterialTypes(res.data.materialTypes)).catch(err => console.error(err));
   }, []);
 
-  useEffect(() => {
+  const fetchCatalogProducts = (retryCount = 0) => {
     setLoading(true);
-    // Build query URL
+    setError(null);
     const query = new URLSearchParams();
     query.set('page', page.toString());
     query.set('limit', '8');
@@ -47,14 +48,30 @@ const CatalogPage: React.FC = () => {
 
     api.get(`/products?${query.toString()}`)
       .then(res => {
-        if (res.data.success) {
-          setProducts(res.data.products);
-          setTotal(res.data.total);
-          setPages(res.data.pages);
+        if (res.data?.success) {
+          setProducts(res.data.products || []);
+          setTotal(res.data.total || 0);
+          setPages(res.data.pages || 1);
+          setError(null);
+        } else {
+          setError('Could not load products. Please try again.');
         }
       })
-      .catch(err => console.error(err))
-      .finally(() => setLoading(false));
+      .catch(err => {
+        console.error('Error fetching products:', err);
+        if (retryCount < 1) {
+          setTimeout(() => fetchCatalogProducts(retryCount + 1), 1500);
+        } else {
+          setError(err?.response?.data?.message || 'Could not connect to marketplace service. Please check your connection or retry.');
+        }
+      })
+      .finally(() => {
+        setLoading(false);
+      });
+  };
+
+  useEffect(() => {
+    fetchCatalogProducts();
   }, [searchParams]);
 
   const updateParam = (key: string, value: string) => {
@@ -101,7 +118,9 @@ const CatalogPage: React.FC = () => {
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8">
         <div>
           <h1 className="text-3xl font-extrabold text-slate-900 tracking-tight">Usable Materials Catalog</h1>
-          <p className="text-sm text-slate-500 mt-1">Found {total} approved materials in Adama City</p>
+          <p className="text-sm text-slate-500 mt-1">
+            {loading ? 'Updating materials in Adama City...' : `Found ${total} approved materials in Adama City`}
+          </p>
         </div>
         
         {/* Sort and search */}
@@ -232,7 +251,22 @@ const CatalogPage: React.FC = () => {
 
         {/* Right Catalog Grid */}
         <main className="lg:col-span-9 flex flex-col">
-          {loading ? (
+          {error ? (
+            <div className="bg-white rounded-2xl border border-rose-200 p-12 text-center text-slate-600 flex flex-col items-center justify-center flex-1">
+              <div className="w-12 h-12 bg-rose-50 text-rose-600 rounded-full flex items-center justify-center mb-3">
+                <RotateCcw className="w-6 h-6" />
+              </div>
+              <h3 className="font-bold text-lg text-slate-800">Connection Error</h3>
+              <p className="text-sm text-slate-500 mt-1 max-w-md">{error}</p>
+              <button
+                onClick={() => fetchCatalogProducts(0)}
+                className="mt-5 px-5 py-2.5 bg-primary-600 hover:bg-primary-700 text-white rounded-xl text-sm font-semibold shadow-md transition-all cursor-pointer flex items-center gap-1.5"
+              >
+                <RotateCcw className="w-4 h-4" />
+                Retry Loading
+              </button>
+            </div>
+          ) : loading ? (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 flex-1">
               {[...Array(6)].map((_, i) => (
                 <div key={i} className="bg-white rounded-2xl border border-slate-200 p-4 h-80 animate-pulse space-y-4">
