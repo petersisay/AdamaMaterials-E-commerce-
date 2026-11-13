@@ -1,6 +1,7 @@
 const mongoose = require('mongoose');
 const seedData = require('../jobs/seed');
 const ensureApprovedProductsExist = require('../jobs/seedProducts');
+const Migration = require('../models/Migration');
 
 const cleanseProductImagesInDatabase = async () => {
   try {
@@ -127,6 +128,10 @@ const cleanseProductImagesInDatabase = async () => {
       'Bible Verse Hoddie': 1850
     };
 
+    // Safe One-Time Migration Check for baseline catalog pricing
+    const pricingMigration = await Migration.findOne({ key: 'v1_initial_realistic_pricing' });
+    const shouldApplyInitialPrices = !pricingMigration;
+
     const refreshedProducts = await Product.find({});
     for (const p of refreshedProducts) {
       let changed = false;
@@ -139,7 +144,9 @@ const cleanseProductImagesInDatabase = async () => {
         changed = true;
       }
 
-      if (realisticProductPrices[p.name] !== undefined && p.price !== realisticProductPrices[p.name]) {
+      // ONLY apply initial recommended prices if one-time migration has not yet run
+      // Once applied, seller-customized prices are preserved across all future server reboots
+      if (shouldApplyInitialPrices && realisticProductPrices[p.name] !== undefined && p.price !== realisticProductPrices[p.name]) {
         p.price = realisticProductPrices[p.name];
         changed = true;
       }
@@ -148,7 +155,16 @@ const cleanseProductImagesInDatabase = async () => {
         await p.save({ validateBeforeSave: false });
       }
     }
-    console.log(`✅ Applied verified material imagery and realistic ETB pricing to ${refreshedProducts.length} products in DB.`);
+
+    if (shouldApplyInitialPrices) {
+      await Migration.create({
+        key: 'v1_initial_realistic_pricing',
+        details: 'Applied baseline realistic ETB product prices for initial catalog products',
+      });
+      console.log(`✅ One-time realistic ETB pricing baseline recorded. Future restarts will preserve all seller price edits.`);
+    } else {
+      console.log(`ℹ️ Pricing migration already completed. Preserving seller-managed custom prices across ${refreshedProducts.length} products.`);
+    }
   } catch (err) {
     console.warn('Product image cleanse note:', err.message);
   }
