@@ -55,6 +55,17 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
+// Normalizes non-standard or legacy user roles (e.g. STUDENT, USER) to BUYER for seamless shopping & dashboard access
+export const normalizeUser = (u: any): User | null => {
+  if (!u) return null;
+  const standardRoles = ['BUYER', 'SELLER', 'STAFF', 'ADMIN'];
+  const effectiveRole = u.role && standardRoles.includes(u.role) ? u.role : 'BUYER';
+  return {
+    ...u,
+    role: effectiveRole,
+  };
+};
+
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
@@ -64,7 +75,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     try {
       const response = await api.get('/auth/me');
       if (response.data.success) {
-        setUser(response.data.user);
+        setUser(normalizeUser(response.data.user));
       } else {
         setUser(null);
       }
@@ -102,7 +113,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         password,
       });
       if (response.data.success) {
-        const loggedInUser: User = response.data.user;
+        const loggedInUser: User = normalizeUser(response.data.user)!;
         setUser(loggedInUser);
         showToast(`Welcome back, ${loggedInUser.name || loggedInUser.username}!`, 'success');
         return loggedInUser;
@@ -126,7 +137,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         role,
       });
       if (response.data.success) {
-        const newUser: User = response.data.user;
+        const newUser: User = normalizeUser(response.data.user)!;
         setUser(newUser);
         showToast(`Account created successfully! Welcome, @${newUser.username || cleanUsername}.`, 'success');
         return newUser;
@@ -143,7 +154,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     try {
       const response = await api.put('/auth/updatedetails', data);
       if (response.data.success) {
-        const updated: User = response.data.user;
+        const updated: User = normalizeUser(response.data.user)!;
         setUser(updated);
         showToast('Profile updated successfully!', 'success');
         return updated;
@@ -166,7 +177,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       if (response.data.success) {
         const avatarUrl = response.data.avatar || response.data.user?.avatar;
         if (response.data.user) {
-          setUser(response.data.user);
+          setUser(normalizeUser(response.data.user));
         } else if (avatarUrl) {
           setUser((prev) => (prev ? { ...prev, avatar: avatarUrl } : prev));
         }
@@ -200,7 +211,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     try {
       const response = await api.post('/auth/google', { credential, accessToken, role });
       if (response.data.success) {
-        const loggedUser: User = response.data.user;
+        const loggedUser: User = normalizeUser(response.data.user)!;
         setUser(loggedUser);
         showToast(`Signed in with Google as ${loggedUser.name}!`, 'success');
         return {
@@ -221,7 +232,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     try {
       const response = await api.post('/auth/onboarding', data);
       if (response.data.success) {
-        const updated: User = response.data.user;
+        const updated: User = normalizeUser(response.data.user)!;
         setUser(updated);
         showToast('Profile setup completed successfully!', 'success');
         return updated;
