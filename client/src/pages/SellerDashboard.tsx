@@ -1,7 +1,8 @@
 import React, { useEffect, useState } from 'react';
 import { useToast } from '../context/ToastContext';
-import { Plus, Check, Clock, AlertCircle, Trash2, ArrowUpRight, DollarSign, Wallet, FileText, Upload, X } from 'lucide-react';
+import { Plus, Check, Clock, AlertCircle, Trash2, ArrowUpRight, DollarSign, Wallet, FileText, Upload, X, Pencil } from 'lucide-react';
 import api from '../services/api';
+import { formatETB } from '../utils/formatCurrency';
 
 const SellerDashboard: React.FC = () => {
   const { showToast } = useToast();
@@ -34,6 +35,12 @@ const SellerDashboard: React.FC = () => {
   const [uploadedImages, setUploadedImages] = useState<string[]>([]);
   const [uploading, setUploading] = useState(false);
   const [submittingProduct, setSubmittingProduct] = useState(false);
+
+  // Edit price and stock state
+  const [editingProduct, setEditingProduct] = useState<any | null>(null);
+  const [editPrice, setEditPrice] = useState<string>('');
+  const [editQuantity, setEditQuantity] = useState<string>('');
+  const [updatingListing, setUpdatingListing] = useState<boolean>(false);
 
   const fetchEarningsAndPayouts = async () => {
     try {
@@ -166,6 +173,43 @@ const SellerDashboard: React.FC = () => {
     }
   };
 
+  const handleOpenEditModal = (p: any) => {
+    setEditingProduct(p);
+    setEditPrice(p.price?.toString() || '');
+    setEditQuantity(p.quantity !== undefined ? p.quantity.toString() : '1');
+  };
+
+  const handleUpdatePriceStock = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editingProduct) return;
+    const numPrice = Number(editPrice);
+    const numQty = Number(editQuantity);
+    if (isNaN(numPrice) || numPrice < 1) {
+      showToast('Please enter a valid positive price in ETB (minimum 1 ETB).', 'warning');
+      return;
+    }
+    if (isNaN(numQty) || numQty < 0 || !Number.isInteger(numQty)) {
+      showToast('Quantity must be a non-negative whole number.', 'warning');
+      return;
+    }
+    setUpdatingListing(true);
+    try {
+      const res = await api.put(`/products/${editingProduct._id}`, {
+        price: numPrice,
+        quantity: numQty,
+      });
+      if (res.data.success) {
+        showToast(res.data.message || 'Price and stock updated successfully!', 'success');
+        setEditingProduct(null);
+        fetchProducts();
+      }
+    } catch (err: any) {
+      showToast(err.response?.data?.message || 'Failed to update listing.', 'error');
+    } finally {
+      setUpdatingListing(false);
+    }
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-slate-50">
@@ -183,28 +227,28 @@ const SellerDashboard: React.FC = () => {
           <div className="bg-primary-50 text-primary-600 p-3 rounded-xl"><DollarSign className="w-6 h-6" /></div>
           <div>
             <span className="text-xs text-slate-400 font-bold uppercase block">Total Sales</span>
-            <span className="text-xl font-black text-slate-900">{stats.totalSales.toLocaleString()} ETB</span>
+            <span className="text-xl font-black text-slate-900">{formatETB(stats.totalSales)}</span>
           </div>
         </div>
         <div className="bg-white border border-slate-200 p-6 rounded-2xl shadow-sm flex items-center gap-4">
           <div className="bg-emerald-50 text-emerald-600 p-3 rounded-xl"><Wallet className="w-6 h-6" /></div>
           <div>
             <span className="text-xs text-slate-400 font-bold uppercase block">Paid Payouts</span>
-            <span className="text-xl font-black text-slate-900">{stats.paidPayout.toLocaleString()} ETB</span>
+            <span className="text-xl font-black text-slate-900">{formatETB(stats.paidPayout)}</span>
           </div>
         </div>
         <div className="bg-white border border-slate-200 p-6 rounded-2xl shadow-sm flex items-center gap-4">
           <div className="bg-blue-50 text-blue-600 p-3 rounded-xl"><Check className="w-6 h-6" /></div>
           <div>
             <span className="text-xs text-slate-400 font-bold uppercase block">Eligible (Delivered)</span>
-            <span className="text-xl font-black text-slate-900">{stats.eligiblePayout.toLocaleString()} ETB</span>
+            <span className="text-xl font-black text-slate-900">{formatETB(stats.eligiblePayout)}</span>
           </div>
         </div>
         <div className="bg-white border border-slate-200 p-6 rounded-2xl shadow-sm flex items-center gap-4">
           <div className="bg-amber-50 text-amber-600 p-3 rounded-xl"><Clock className="w-6 h-6" /></div>
           <div>
             <span className="text-xs text-slate-400 font-bold uppercase block">Pending Payouts</span>
-            <span className="text-xl font-black text-slate-900">{stats.pendingPayout.toLocaleString()} ETB</span>
+            <span className="text-xl font-black text-slate-900">{formatETB(stats.pendingPayout)}</span>
           </div>
         </div>
       </section>
@@ -273,11 +317,19 @@ const SellerDashboard: React.FC = () => {
                     </div>
                     
                     <div className="flex items-center justify-between text-xs text-slate-400 pt-3 border-t border-slate-100">
-                      <span>Price: <strong>{p.price} ETB</strong></span>
+                      <span>Price: <strong className="text-slate-800">{formatETB(p.price)}</strong></span>
                       <span>Stock: <strong>{p.quantity}</strong></span>
                     </div>
 
                     <div className="flex gap-2 pt-2">
+                      <button
+                        onClick={() => handleOpenEditModal(p)}
+                        title="Edit Price & Stock"
+                        className="px-3 py-2 border border-slate-200 hover:bg-primary-50 hover:text-primary-600 hover:border-primary-200 text-slate-600 rounded-xl transition-all cursor-pointer flex items-center gap-1.5 text-xs font-semibold"
+                      >
+                        <Pencil className="w-3.5 h-3.5" />
+                        <span>Edit</span>
+                      </button>
                       {p.approvalStatus === 'DRAFT' && (
                         <button
                           onClick={() => handleSubmitForApproval(p._id)}
@@ -328,9 +380,9 @@ const SellerDashboard: React.FC = () => {
                   {payouts.map(p => (
                     <tr key={p._id} className="hover:bg-slate-50/50">
                       <td className="p-4 font-bold text-slate-800">{p.order?.trackingNumber}</td>
-                      <td className="p-4 font-semibold">{p.amount.toLocaleString()} ETB</td>
-                      <td className="p-4 text-slate-400">{p.commissionAmount.toLocaleString()} ETB</td>
-                      <td className="p-4 font-black text-slate-900">{p.payoutAmount.toLocaleString()} ETB</td>
+                      <td className="p-4 font-semibold">{formatETB(p.amount)}</td>
+                      <td className="p-4 text-slate-400">{formatETB(p.commissionAmount)}</td>
+                      <td className="p-4 font-black text-slate-900">{formatETB(p.payoutAmount)}</td>
                       <td className="p-4">
                         <span className={`px-2 py-0.5 rounded-full font-bold uppercase tracking-wider text-[9px] ${
                           p.status === 'PAID' ? 'bg-emerald-50 text-emerald-700 border border-emerald-100' :
@@ -498,6 +550,74 @@ const SellerDashboard: React.FC = () => {
                   className="w-full bg-primary-600 hover:bg-primary-700 text-white font-bold py-3 rounded-xl text-sm transition-all shadow-md shadow-primary-200/60 disabled:opacity-50 cursor-pointer"
                 >
                   {submittingProduct ? 'Creating...' : 'Create Product Listing'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+      {/* Edit Price & Stock Modal */}
+      {editingProduct && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50 overflow-y-auto backdrop-blur-sm">
+          <div className="bg-white rounded-2xl p-6 sm:p-8 max-w-md w-full shadow-2xl border border-slate-200 space-y-4 my-8">
+            <div className="flex justify-between items-center border-b border-slate-100 pb-3">
+              <div>
+                <h3 className="font-bold text-slate-900 text-sm">Update Price & Stock</h3>
+                <p className="text-xs text-slate-500 truncate max-w-[280px]">{editingProduct.name}</p>
+              </div>
+              <button
+                onClick={() => setEditingProduct(null)}
+                className="p-1 rounded hover:bg-slate-100 text-slate-400 hover:text-slate-600 transition-colors"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <form onSubmit={handleUpdatePriceStock} className="space-y-4 text-xs">
+              <div>
+                <label className="block font-semibold text-slate-600 mb-1">Selling Price (ETB)</label>
+                <input
+                  type="number"
+                  required
+                  min="1"
+                  step="any"
+                  value={editPrice}
+                  onChange={(e) => setEditPrice(e.target.value)}
+                  placeholder="e.g. 2500"
+                  className="w-full py-2 px-3 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-500 bg-white text-sm"
+                />
+                <p className="text-[11px] text-slate-400 mt-1">Authoritative ETB amount (minimum 1 ETB).</p>
+              </div>
+
+              <div>
+                <label className="block font-semibold text-slate-600 mb-1">Available Quantity / Stock</label>
+                <input
+                  type="number"
+                  required
+                  min="0"
+                  step="1"
+                  value={editQuantity}
+                  onChange={(e) => setEditQuantity(e.target.value)}
+                  placeholder="e.g. 5"
+                  className="w-full py-2 px-3 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-500 bg-white text-sm"
+                />
+                <p className="text-[11px] text-slate-400 mt-1">Number of units currently available for purchase.</p>
+              </div>
+
+              <div className="pt-3 border-t border-slate-100 flex gap-2">
+                <button
+                  type="button"
+                  onClick={() => setEditingProduct(null)}
+                  className="flex-1 py-2.5 px-4 border border-slate-200 hover:bg-slate-50 text-slate-600 font-semibold rounded-xl text-xs transition-colors cursor-pointer"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={updatingListing}
+                  className="flex-1 bg-primary-600 hover:bg-primary-700 text-white font-bold py-2.5 px-4 rounded-xl text-xs transition-all shadow-md shadow-primary-200/60 disabled:opacity-50 cursor-pointer"
+                >
+                  {updatingListing ? 'Saving...' : 'Save Changes'}
                 </button>
               </div>
             </form>
