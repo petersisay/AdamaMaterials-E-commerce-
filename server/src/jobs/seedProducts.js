@@ -26,7 +26,11 @@ const Product = require('../models/Product');
  */
 async function ensureApprovedProductsExist() {
   try {
-    // 1. If we already have 5 or more approved products, nothing to seed
+    // 1. Permanently heal legacy title misspellings if present
+    await Product.updateMany({ name: 'Bible Verse Hoddie' }, { $set: { name: 'Bible Verse Hoodie' } });
+    await Product.updateMany({ name: 'Hoddie' }, { $set: { name: 'Hoodie' } });
+
+    // If we already have 5 or more approved products, check and return
     const approvedCount = await Product.countDocuments({ approvalStatus: 'APPROVED' });
     if (approvedCount >= 5) {
       return { success: true, count: approvedCount, seeded: false };
@@ -297,7 +301,7 @@ async function ensureApprovedProductsExist() {
         category: heavyCat._id,
         materialType: metalMat._id,
         condition: 'Good',
-        images: ['https://media.istockphoto.com/id/939597574/photo/the-group-pumps-at-the-water-pipe.webp?a=1&b=1&s=612x612&w=0&k=20&c=JS8bOn5XufjQMuwIZbShp6_ceWz09ZK2UoShiYmZtO4='],
+        images: ['https://images.unsplash.com/photo-1581092160607-ee22621dd758?w=600&auto=format&fit=crop&q=80'],
         seller: demoSeller._id,
         approvalStatus: 'APPROVED',
         location: { subCity: 'Boku', city: 'Adama' },
