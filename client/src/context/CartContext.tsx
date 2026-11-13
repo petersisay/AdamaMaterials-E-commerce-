@@ -37,8 +37,10 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const { user } = useAuth();
   const { showToast } = useToast();
 
+  const isBuyerRole = (u: any) => u && !['ADMIN', 'STAFF', 'SELLER'].includes(u.role);
+
   const fetchCart = async () => {
-    if (!user || user.role !== 'BUYER') return;
+    if (!user || !isBuyerRole(user)) return;
     setLoading(true);
     try {
       const response = await api.get('/cart');
@@ -53,9 +55,9 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
-  // Fetch cart automatically when user logs in and is a BUYER
+  // Fetch cart automatically when user logs in and is an eligible buyer/student
   useEffect(() => {
-    if (user && user.role === 'BUYER') {
+    if (user && isBuyerRole(user)) {
       fetchCart();
     } else {
       setItems([]);
