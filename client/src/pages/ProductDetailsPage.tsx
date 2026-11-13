@@ -3,8 +3,9 @@ import { useParams, Link, useNavigate } from 'react-router-dom';
 import { useCart } from '../context/CartContext';
 import { useAuth } from '../context/AuthContext';
 import { useToast } from '../context/ToastContext';
-import { ChevronLeft, ShoppingCart, ShieldAlert, Star, MapPin, Tag, Box, Heart } from 'lucide-react';
+import { ChevronLeft, ShoppingCart, ShieldAlert, Star, MapPin, Tag, Box, Heart, RefreshCw } from 'lucide-react';
 import api from '../services/api';
+import { getMaterialFallbackImage } from '../utils/materialImages';
 
 const ProductDetailsPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -28,16 +29,19 @@ const ProductDetailsPage: React.FC = () => {
     // Fetch product details
     api.get(`/products/${id}`)
       .then(res => {
-        if (res.data.success) {
-          setProduct(res.data.product);
+        if (res.data?.success && res.data.product) {
+          const p = res.data.product;
+          setProduct(p);
           setRelated(res.data.relatedProducts || []);
-          if (res.data.product.images && res.data.product.images.length > 0) {
-            setActiveImage(res.data.product.images[0]);
+          if (p.images && Array.isArray(p.images) && p.images.length > 0 && p.images[0]) {
+            setActiveImage(p.images[0]);
+          } else {
+            setActiveImage(getMaterialFallbackImage(p.name, p.category?.name));
           }
         }
       })
       .catch(err => {
-        console.error(err);
+        console.error('Failed to load product details:', err);
         showToast('Failed to load product details.', 'error');
       })
       .finally(() => setLoading(false));
@@ -45,12 +49,12 @@ const ProductDetailsPage: React.FC = () => {
     // Fetch product reviews
     api.get(`/reviews/product/${id}`)
       .then(res => {
-        if (res.data.success) {
+        if (res.data?.success) {
           setReviews(res.data.reviews || []);
           setAvgRating(res.data.averageRating || 0);
         }
       })
-      .catch(err => console.error(err));
+      .catch(err => console.error('Reviews load note:', err));
   }, [id, showToast]);
 
   const handleAddToCart = async () => {
@@ -65,7 +69,8 @@ const ProductDetailsPage: React.FC = () => {
       return;
     }
 
-    if (product.seller._id === user._id) {
+    const sellerId = product?.seller?._id || product?.seller;
+    if (sellerId && user._id && sellerId.toString() === user._id.toString()) {
       showToast('You cannot purchase your own material listing.', 'warning');
       return;
     }
@@ -89,10 +94,19 @@ const ProductDetailsPage: React.FC = () => {
       <div className="max-w-7xl mx-auto px-4 py-20 text-center">
         <h2 className="text-2xl font-bold text-slate-800">Product not found</h2>
         <p className="text-slate-500 mt-2">The product you are looking for does not exist or is pending review.</p>
-        <Link to="/products" className="inline-flex items-center gap-1 mt-6 text-primary-600 font-bold hover:underline">
-          <ChevronLeft className="w-4 h-4" />
-          Back to Catalog
-        </Link>
+        <div className="flex items-center justify-center gap-4 mt-6">
+          <button
+            onClick={() => window.location.reload()}
+            className="inline-flex items-center gap-1.5 px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-xl text-sm transition-colors cursor-pointer"
+          >
+            <RefreshCw className="w-4 h-4" />
+            Retry Loading
+          </button>
+          <Link to="/products" className="inline-flex items-center gap-1 px-4 py-2 bg-primary-600 hover:bg-primary-700 text-white font-bold rounded-xl text-sm transition-colors">
+            <ChevronLeft className="w-4 h-4" />
+            Back to Catalog
+          </Link>
+        </div>
       </div>
     );
   }
@@ -110,13 +124,13 @@ const ProductDetailsPage: React.FC = () => {
         <div className="lg:col-span-7 space-y-4">
           <div className="aspect-square bg-slate-100 rounded-2xl border border-slate-200 overflow-hidden relative">
             <img 
-              src={activeImage || 'https://images.unsplash.com/photo-1742203900461-d822f8e7fd30?w=600&auto=format&fit=crop&q=80'} 
+              src={activeImage || getMaterialFallbackImage(product.name, product.category?.name)} 
               alt={product.name} 
               className="w-full h-full object-cover"
               onError={(e) => {
                 const target = e.currentTarget;
                 target.onerror = null;
-                target.src = 'https://images.unsplash.com/photo-1742203900461-d822f8e7fd30?w=600&auto=format&fit=crop&q=80';
+                target.src = getMaterialFallbackImage(product.name, product.category?.name);
               }}
             />
             {product.quantity === 0 && (
@@ -126,7 +140,7 @@ const ProductDetailsPage: React.FC = () => {
             )}
           </div>
           {/* Thumbnails */}
-          {product.images.length > 1 && (
+          {Array.isArray(product.images) && product.images.length > 1 && (
             <div className="flex gap-3 overflow-x-auto py-1">
               {product.images.map((img: string, idx: number) => (
                 <button
@@ -141,7 +155,7 @@ const ProductDetailsPage: React.FC = () => {
                     onError={(e) => {
                       const target = e.currentTarget;
                       target.onerror = null;
-                      target.src = 'https://images.unsplash.com/photo-1742203900461-d822f8e7fd30?w=600&auto=format&fit=crop&q=80';
+                      target.src = getMaterialFallbackImage(product.name, product.category?.name);
                     }}
                   />
                 </button>
@@ -155,10 +169,10 @@ const ProductDetailsPage: React.FC = () => {
           <div>
             <div className="flex items-center gap-2 flex-wrap">
               <span className="bg-primary-50 text-primary-700 border border-primary-100 text-[10px] font-bold px-2.5 py-0.5 rounded-full uppercase tracking-wide">
-                {product.category?.name || 'Category'}
+                {product.category?.name || 'Reclaimed Material'}
               </span>
               <span className="bg-accent-50 text-accent-700 border border-accent-100 text-[10px] font-bold px-2.5 py-0.5 rounded-full uppercase tracking-wide">
-                {product.condition}
+                {product.condition || 'Good'}
               </span>
             </div>
             <h1 className="text-3xl font-extrabold text-slate-900 tracking-tight mt-3">{product.name}</h1>
@@ -168,27 +182,27 @@ const ProductDetailsPage: React.FC = () => {
                   <Star key={i} className={`w-4.5 h-4.5 ${i < Math.round(avgRating) ? 'fill-amber-500' : 'text-slate-300'}`} />
                 ))}
               </div>
-              <span className="text-xs font-semibold text-slate-500">({reviews.length} reviews)</span>
+              <span className="text-xs font-semibold text-slate-500">({(reviews || []).length} reviews)</span>
             </div>
           </div>
 
           <div className="text-2xl font-black text-primary-900">
-            {product.price.toLocaleString()} ETB
+            {Number(product.price || 0).toLocaleString()} ETB
             <span className="text-xs font-semibold text-slate-400 block mt-1">Managed escrow payment</span>
           </div>
 
           <div className="border-t border-b border-slate-200/80 py-4 space-y-3">
             <div className="flex items-center gap-2.5 text-sm text-slate-600">
               <MapPin className="w-4.5 h-4.5 text-slate-400 flex-shrink-0" />
-              <span>Location: <strong>{product.location.subCity}, Adama</strong></span>
+              <span>Location: <strong>{product.location?.subCity || 'Kebele 04'}, {product.location?.city || 'Adama'}</strong></span>
             </div>
             <div className="flex items-center gap-2.5 text-sm text-slate-600">
               <Tag className="w-4.5 h-4.5 text-slate-400 flex-shrink-0" />
-              <span>Material: <strong>{product.materialType?.name}</strong></span>
+              <span>Material: <strong>{product.materialType?.name || 'Standard Reusable Material'}</strong></span>
             </div>
             <div className="flex items-center gap-2.5 text-sm text-slate-600">
               <Box className="w-4.5 h-4.5 text-slate-400 flex-shrink-0" />
-              <span>In Stock: <strong className={product.quantity > 0 ? 'text-slate-800' : 'text-rose-500'}>{product.quantity} units</strong></span>
+              <span>In Stock: <strong className={product.quantity > 0 ? 'text-slate-800' : 'text-rose-500'}>{product.quantity || 0} units</strong></span>
             </div>
           </div>
 
