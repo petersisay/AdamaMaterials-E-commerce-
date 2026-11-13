@@ -197,9 +197,14 @@ exports.login = asyncHandler(async (req, res, next) => {
 
   user.password = undefined;
 
+  const userObj = user.toObject ? user.toObject() : user;
+  if (userObj && !['BUYER', 'SELLER', 'STAFF', 'ADMIN'].includes(userObj.role)) {
+    userObj.role = 'BUYER';
+  }
+
   res.status(200).json({
     success: true,
-    user,
+    user: userObj,
     token: tokens.accessToken,
     accessToken: tokens.accessToken,
   });
@@ -342,9 +347,14 @@ exports.googleAuth = asyncHandler(async (req, res, next) => {
 
   const needsRoleSelection = isNewUser && !isSellerRole;
 
+  const userObj = user.toObject ? user.toObject() : user;
+  if (userObj && !['BUYER', 'SELLER', 'STAFF', 'ADMIN'].includes(userObj.role)) {
+    userObj.role = 'BUYER';
+  }
+
   res.status(200).json({
     success: true,
-    user,
+    user: userObj,
     isNewUser,
     needsRoleSelection,
     accessToken: tokens.accessToken,
@@ -563,9 +573,13 @@ exports.updateSellerLocation = asyncHandler(async (req, res, next) => {
 // 6. Get current authenticated user details
 exports.getMe = asyncHandler(async (req, res, next) => {
   const user = await User.findById(req.user._id).populate('sellerProfile.categoriesSold');
+  const userObj = (user || req.user).toObject ? (user || req.user).toObject() : (user || req.user);
+  if (userObj && !['BUYER', 'SELLER', 'STAFF', 'ADMIN'].includes(userObj.role)) {
+    userObj.role = 'BUYER';
+  }
   res.status(200).json({
     success: true,
-    user: user || req.user,
+    user: userObj,
   });
 });
 
