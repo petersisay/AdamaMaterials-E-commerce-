@@ -50,12 +50,28 @@ app.use(
   })
 );
 
-// Limit requests from same IP — disabled in development to avoid hot-reload false positives
+// Limit requests from same IP — protects against brute-force while allowing active browsing and live map tracking
 const limiter = rateLimit({
-  max: process.env.NODE_ENV === 'production' ? 200 : 0, // 0 = disabled
+  max: process.env.NODE_ENV === 'production' ? 2000 : 0, // 2000 reqs/15m to support mobile NAT & live GPS tracking
   windowMs: 15 * 60 * 1000,
-  message: 'Too many requests from this IP, please try again in 15 minutes.',
-  skip: () => process.env.NODE_ENV !== 'production',
+  message: {
+    success: false,
+    message: 'Too many requests from this IP, please try again in a few minutes.',
+  },
+  skip: (req) => {
+    if (process.env.NODE_ENV !== 'production') return true;
+    // Exempt public read-only browsing (products, map places, categories) from IP rate limits
+    if (
+      req.method === 'GET' &&
+      (req.path.startsWith('/v1/products') ||
+        req.path.startsWith('/v1/map') ||
+        req.path.startsWith('/v1/categories') ||
+        req.path.startsWith('/v1/material-types'))
+    ) {
+      return true;
+    }
+    return false;
+  },
 });
 app.use('/api', limiter);
 
