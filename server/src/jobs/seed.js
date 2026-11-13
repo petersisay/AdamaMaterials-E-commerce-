@@ -703,7 +703,7 @@ const seedData = async (isImported = false) => {
         name: 'Usable Pine Wood Pallets',
         description:
           'Batch of 10 clean pine wood pallets. Great for building scrap wood furniture or storage shelving.',
-        price: 450,
+        price: 400,
         quantity: 8,
         category: furnitureCat._id,
         materialType: woodMat._id,
@@ -722,7 +722,7 @@ const seedData = async (isImported = false) => {
         name: 'Heavy Duty Metal Filing Cabinet',
         description:
           'Solid steel 4-drawer filing cabinet in Excellent condition. Keys are included.',
-        price: 2500,
+        price: 8500,
         quantity: 2,
         category: furnitureCat._id,
         materialType: metalMat._id,
@@ -857,7 +857,7 @@ const seedData = async (isImported = false) => {
         name: 'Second-hand Electric Drill (Bosch 650W)',
         description:
           'Authentic Bosch electric impact drill, corded. Missing extra bits, but the motor and chuck run strong.',
-        price: 1800,
+        price: 3800,
         quantity: 1,
         category: toolsCat._id,
         materialType: electroMat._id,
@@ -897,7 +897,7 @@ const seedData = async (isImported = false) => {
         name: 'Heavy-Duty Used Plastic Water Barrels (200L - Blue)',
         description:
           'Food-grade high-density polyethylene (HDPE) barrels with tight-seal screw tops. Thoroughly cleaned and leak-free.',
-        price: 1600,
+        price: 2100,
         quantity: 4,
         category: householdCat._id,
         materialType: plasticMat._id,
@@ -956,7 +956,7 @@ const seedData = async (isImported = false) => {
         name: 'Scrap Iron Rebar & Steel Rod Cutoffs (Bundle of 25)',
         description:
           'Usable construction scrap rebars (12mm and 14mm), lengths from 1.5m to 2.5m. Great for reinforced concrete foundations.',
-        price: 3500,
+        price: 3200,
         quantity: 2,
         category: toolsCat._id,
         materialType: metalMat._id,
@@ -975,7 +975,7 @@ const seedData = async (isImported = false) => {
         name: 'Scrap Copper Wires (12kg Stripped Bright Copper)',
         description:
           'Stripped high-purity electrical copper cables and motor windings. Weighs approximately 12kg.',
-        price: 3200,
+        price: 9600,
         quantity: 1,
         category: toolsCat._id,
         materialType: metalMat._id,
@@ -994,7 +994,7 @@ const seedData = async (isImported = false) => {
         name: 'Used Corrugated Galvanized Iron Sheets (8 Pcs)',
         description:
           'Pre-used 28-gauge zinc roofing sheets. Minor nail holes but free of heavy rust. Usable for fencing or outbuilding roofs.',
-        price: 2400,
+        price: 3800,
         quantity: 3,
         category: toolsCat._id,
         materialType: metalMat._id,
@@ -1074,7 +1074,7 @@ const seedData = async (isImported = false) => {
         name: 'Used 3-Phase Industrial Electric Motor (5.5kW)',
         description:
           'High torque 5.5kW asynchronous 3-phase induction motor with cast iron housing. Tested and runs smooth.',
-        price: 12500,
+        price: 18500,
         quantity: 1,
         category: toolsCat._id,
         materialType: electroMat._id,
