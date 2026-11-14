@@ -72,4 +72,6 @@ const deliverySchema = new mongoose.Schema(
   }
 );
 
+deliverySchema.index({ order: 1 }, { unique: true });
+
 module.exports = mongoose.model('Delivery', deliverySchema);
