@@ -473,6 +473,39 @@ test.describe('Full Integration Test Suite', () => {
     }
   });
 
+  test('Webhook: Production refuses payment fulfillment when CHAPA_WEBHOOK_SECRET is missing', async () => {
+    const originalEnv = process.env.NODE_ENV;
+    const originalSecret = process.env.CHAPA_WEBHOOK_SECRET;
+    process.env.NODE_ENV = 'production';
+    delete process.env.CHAPA_WEBHOOK_SECRET;
+    try {
+      const paymentController = require('../src/controllers/paymentController');
+      let statusSent = 0;
+      let bodySent = {};
+      const req = {
+        params: { provider: 'chapa' },
+        body: { tx_ref: 'TX-CHAPA-PROD-TEST', status: 'success' },
+        headers: {},
+      };
+      const res = {
+        status(code) {
+          statusSent = code;
+          return this;
+        },
+        json(data) {
+          bodySent = data;
+          return this;
+        },
+      };
+      await paymentController.handleWebhook(req, res, () => {});
+      assert.strictEqual(statusSent, 500, 'Must refuse Chapa webhook when secret is missing in production');
+      assert.ok(bodySent.message?.includes('Webhook signature secret is not configured in production'));
+    } finally {
+      process.env.NODE_ENV = originalEnv;
+      process.env.CHAPA_WEBHOOK_SECRET = originalSecret;
+    }
+  });
+
   test('Webhook: Mock provider is rejected in production mode', async () => {
     const originalEnv = process.env.NODE_ENV;
     process.env.NODE_ENV = 'production';
