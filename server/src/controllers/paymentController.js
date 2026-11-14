@@ -790,25 +790,35 @@ exports.verifyOnlinePayment = asyncHandler(async (req, res, next) => {
       }
     }
 
-    const existingDelivery = await Delivery.findOne({ order: order._id });
-    if (!existingDelivery) {
-      await Delivery.create({ order: order._id, status: 'PENDING', fee: order.deliveryFee || 0 });
-    }
+    await Delivery.findOneAndUpdate(
+      { order: order._id },
+      {
+        $setOnInsert: {
+          order: order._id,
+          status: 'PENDING',
+          fee: order.deliveryFee || 0,
+        },
+      },
+      { upsert: true, new: true }
+    );
 
-    const existingNotif = await Notification.findOne({
-      user: order.buyer,
-      relatedId: order._id,
-      type: 'PAYMENT',
-    });
-    if (!existingNotif) {
-      await Notification.create({
+    await Notification.findOneAndUpdate(
+      {
         user: order.buyer,
-        title: 'Payment Successful',
-        message: `We verified your payment for order ${order.trackingNumber}.`,
-        type: 'PAYMENT',
         relatedId: order._id,
-      });
-    }
+        type: 'PAYMENT',
+      },
+      {
+        $setOnInsert: {
+          user: order.buyer,
+          title: 'Payment Successful',
+          message: `We verified your payment for order ${order.trackingNumber}.`,
+          type: 'PAYMENT',
+          relatedId: order._id,
+        },
+      },
+      { upsert: true, new: true }
+    );
   } else {
     if (order.paymentStatus !== 'PAID') {
       payment.status = 'FAILED';
@@ -962,27 +972,37 @@ exports.handleWebhook = asyncHandler(async (req, res, next) => {
       }
     }
 
-    // Ensure Delivery record exists exactly once
-    const existingDelivery = await Delivery.findOne({ order: order._id });
-    if (!existingDelivery) {
-      await Delivery.create({ order: order._id, status: 'PENDING', fee: order.deliveryFee || 0 });
-    }
+    // Ensure Delivery record exists exactly once (atomic upsert avoids concurrency duplicates)
+    await Delivery.findOneAndUpdate(
+      { order: order._id },
+      {
+        $setOnInsert: {
+          order: order._id,
+          status: 'PENDING',
+          fee: order.deliveryFee || 0,
+        },
+      },
+      { upsert: true, new: true }
+    );
 
-    // Ensure Notification exists exactly once
-    const existingNotif = await Notification.findOne({
-      user: order.buyer,
-      relatedId: order._id,
-      type: 'PAYMENT',
-    });
-    if (!existingNotif) {
-      await Notification.create({
+    // Ensure Notification exists exactly once (atomic upsert avoids concurrency duplicates)
+    await Notification.findOneAndUpdate(
+      {
         user: order.buyer,
-        title: 'Payment Success via Webhook',
-        message: `Your payment was processed for order ${order.trackingNumber}.`,
-        type: 'PAYMENT',
         relatedId: order._id,
-      });
-    }
+        type: 'PAYMENT',
+      },
+      {
+        $setOnInsert: {
+          user: order.buyer,
+          title: 'Payment Success via Webhook',
+          message: `Your payment was processed for order ${order.trackingNumber}.`,
+          type: 'PAYMENT',
+          relatedId: order._id,
+        },
+      },
+      { upsert: true, new: true }
+    );
   } else {
     if (order.paymentStatus !== 'PAID') {
       payment.status = 'FAILED';
