@@ -734,6 +734,12 @@ exports.verifyOnlinePayment = asyncHandler(async (req, res, next) => {
   const result = await PaymentService.verify(transactionId, provider);
 
   if (result.status === 'PAID') {
+    // Exact transaction reference guard
+    if (result.transactionId && result.transactionId !== payment.transactionId) {
+      console.error(`[SECURITY] Transaction reference mismatch: expected ${payment.transactionId}, got ${result.transactionId}`);
+      return next(new AppError('Payment transaction reference mismatch. Verification rejected.', 400));
+    }
+
     // Currency mismatch guard
     if (result.currency && result.currency !== 'ETB') {
       console.error(`[SECURITY] Currency mismatch on ${transactionId}: expected ETB, got ${result.currency}`);
@@ -797,16 +803,23 @@ exports.handleWebhook = asyncHandler(async (req, res, next) => {
   const payload = req.body || {};
 
   // Chapa signature verification with strict secret enforcement
-  if (provider === 'chapa' && process.env.CHAPA_WEBHOOK_SECRET) {
-    const sigHeader = req.headers['x-chapa-signature'] || req.headers['chapa-signature'];
-    if (!sigHeader) {
-      console.warn('[SECURITY] Missing Chapa webhook signature header rejected');
-      return res.status(401).json({ success: false, message: 'Missing webhook signature' });
+  if (provider === 'chapa') {
+    if (process.env.NODE_ENV === 'production' && !process.env.CHAPA_WEBHOOK_SECRET) {
+      console.error('[SECURITY CRITICAL] CHAPA_WEBHOOK_SECRET is missing in production. Refusing webhook fulfillment.');
+      return res.status(500).json({ success: false, message: 'Webhook signature secret is not configured in production' });
     }
-    const rawBody = req.rawBody || JSON.stringify(payload);
-    if (!PaymentService.verifyChapaWebhook(rawBody, sigHeader)) {
-      console.warn('[SECURITY] Invalid Chapa webhook signature rejected');
-      return res.status(401).json({ success: false, message: 'Invalid webhook signature' });
+
+    if (process.env.CHAPA_WEBHOOK_SECRET) {
+      const sigHeader = req.headers['x-chapa-signature'] || req.headers['chapa-signature'];
+      if (!sigHeader) {
+        console.warn('[SECURITY] Missing Chapa webhook signature header rejected');
+        return res.status(401).json({ success: false, message: 'Missing webhook signature' });
+      }
+      const rawBody = req.rawBody || JSON.stringify(payload);
+      if (!PaymentService.verifyChapaWebhook(rawBody, sigHeader)) {
+        console.warn('[SECURITY] Invalid Chapa webhook signature rejected');
+        return res.status(401).json({ success: false, message: 'Invalid webhook signature' });
+      }
     }
   }
 
@@ -850,18 +863,32 @@ exports.handleWebhook = asyncHandler(async (req, res, next) => {
   }
 
   // Independent Server-Side Verification against Chapa API for live Chapa transactions
-  if (provider === 'chapa' && process.env.CHAPA_SECRET_KEY && !txRef.startsWith('TX-MOCK-')) {
-    const verifyResult = await PaymentService.verify(txRef, 'CHAPA');
-    if (verifyResult.status === 'PAID') {
-      if (verifyResult.currency && verifyResult.currency !== 'ETB') {
-        return res.status(400).json({ success: false, message: 'Currency mismatch: expected ETB' });
+  if (provider === 'chapa') {
+    if (process.env.NODE_ENV === 'production' && !process.env.CHAPA_SECRET_KEY) {
+      console.error('[SECURITY CRITICAL] CHAPA_SECRET_KEY is missing in production. Refusing webhook fulfillment.');
+      return res.status(500).json({ success: false, message: 'Chapa secret key is not configured in production' });
+    }
+
+    if (process.env.NODE_ENV === 'production' && txRef.startsWith('TX-MOCK-')) {
+      return res.status(403).json({ success: false, message: 'Mock transactions are forbidden in production' });
+    }
+
+    if (process.env.CHAPA_SECRET_KEY && !txRef.startsWith('TX-MOCK-')) {
+      const verifyResult = await PaymentService.verify(txRef, 'CHAPA');
+      if (verifyResult.status === 'PAID') {
+        if (verifyResult.transactionId && verifyResult.transactionId !== payment.transactionId) {
+          return res.status(400).json({ success: false, message: 'Transaction reference mismatch in verified payment' });
+        }
+        if (verifyResult.currency && verifyResult.currency !== 'ETB') {
+          return res.status(400).json({ success: false, message: 'Currency mismatch: expected ETB' });
+        }
+        if (verifyResult.amount === undefined || isNaN(verifyResult.amount) || Math.abs(verifyResult.amount - payment.amount) > 0.01) {
+          return res.status(400).json({ success: false, message: 'Amount mismatch in verified transaction' });
+        }
+        status = 'PAID';
+      } else {
+        status = 'FAILED';
       }
-      if (verifyResult.amount !== undefined && Math.abs(verifyResult.amount - payment.amount) > 0.01) {
-        return res.status(400).json({ success: false, message: 'Amount mismatch in verified transaction' });
-      }
-      status = 'PAID';
-    } else {
-      status = 'FAILED';
     }
   }
 
