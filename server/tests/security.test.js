@@ -14,6 +14,7 @@ const Order = require('../src/models/Order');
 const Payment = require('../src/models/Payment');
 const Payout = require('../src/models/Payout');
 const Delivery = require('../src/models/Delivery');
+const Notification = require('../src/models/Notification');
 const Category = require('../src/models/Category');
 const MaterialType = require('../src/models/MaterialType');
 const Cart = require('../src/models/Cart');
@@ -552,6 +553,361 @@ test.describe('Full Integration Test Suite', () => {
     const orderAfter = await Order.findById(orderId);
     assert.strictEqual(orderAfter.orderStatus, orderBefore.orderStatus, 'Order status must not downgrade');
     assert.strictEqual(orderAfter.paymentStatus, 'PAID', 'Payment status must not downgrade from PAID');
+  });
+
+  test('Recovery: Payment becomes PAID but Order update fails, repeated webhook recovers incomplete Order without duplicate delivery, notifications, inventory, or payouts', async () => {
+    const testOrder = await Order.create({
+      buyer: buyerId,
+      items: [{
+        product: product1Id,
+        name: 'Test Scrap Rebar',
+        price: 500,
+        quantity: 2,
+        seller: seller1Id,
+      }],
+      subtotal: 1000,
+      deliveryFee: 150,
+      total: 1150,
+      paymentMethod: 'CHAPA',
+      orderStatus: 'PENDING_PAYMENT',
+      paymentStatus: 'PENDING',
+      deliveryStatus: 'PENDING',
+      deliveryAddress: {
+        streetAddress: 'Kebele 04',
+        subCity: 'Bole Subcity',
+        city: 'Adama',
+        phoneNumber: '+251911000000',
+      },
+      trackingNumber: 'TRK-RECOVER-TEST-001',
+    });
+
+    const testTxRef = `TX-RECOVER-TEST-${Date.now()}`;
+    const testPayment = await Payment.create({
+      order: testOrder._id,
+      provider: 'CHAPA',
+      transactionId: testTxRef,
+      amount: 1150,
+      status: 'PAID', // Incomplete state: Payment marked PAID, but Order was NOT updated
+    });
+
+    assert.strictEqual(testPayment.status, 'PAID');
+    assert.strictEqual(testOrder.orderStatus, 'PENDING_PAYMENT');
+    assert.strictEqual(testOrder.paymentStatus, 'PENDING');
+
+    const productBefore = await Product.findById(product1Id);
+    const initialQty = productBefore.quantity;
+    const initialPayouts = await Payout.countDocuments({ order: testOrder._id });
+
+    // 1. Chapa retries webhook delivery
+    const res1 = await api('POST', '/payments/webhook/mock', {
+      tx_ref: testTxRef,
+      status: 'success',
+    });
+    assert.strictEqual(res1.status, 200);
+
+    // 2. Verify Order was safely recovered
+    const recoveredOrder = await Order.findById(testOrder._id);
+    assert.strictEqual(recoveredOrder.paymentStatus, 'PAID', 'Order paymentStatus must be recovered to PAID');
+    assert.strictEqual(recoveredOrder.orderStatus, 'CONFIRMED', 'Order orderStatus must be recovered to CONFIRMED');
+
+    // 3. Verify Delivery record created exactly once
+    const deliveriesCount = await Delivery.countDocuments({ order: testOrder._id });
+    assert.strictEqual(deliveriesCount, 1, 'Delivery record must exist exactly once');
+
+    // 4. Verify Notification created exactly once
+    const notifCount = await Notification.countDocuments({ user: buyerId, relatedId: testOrder._id, type: 'PAYMENT' });
+    assert.strictEqual(notifCount, 1, 'Payment notification must exist exactly once');
+
+    // 5. Verify inventory was NOT decremented again during webhook
+    const productAfter = await Product.findById(product1Id);
+    assert.strictEqual(productAfter.quantity, initialQty, 'Inventory must not be decremented during webhook recovery');
+
+    // 6. Verify payouts were NOT duplicated
+    const finalPayouts = await Payout.countDocuments({ order: testOrder._id });
+    assert.strictEqual(finalPayouts, initialPayouts, 'Payout records must not be duplicated during recovery');
+
+    // 7. Repeated delivery: send webhook AGAIN to verify full idempotency
+    const res2 = await api('POST', '/payments/webhook/mock', {
+      tx_ref: testTxRef,
+      status: 'success',
+    });
+    assert.strictEqual(res2.status, 200);
+    assert.ok(res2.data.message?.includes('Already processed and fulfilled'));
+
+    const deliveriesCount2 = await Delivery.countDocuments({ order: testOrder._id });
+    assert.strictEqual(deliveriesCount2, 1, 'Repeated webhook must NOT create duplicate delivery records');
+
+    const notifCount2 = await Notification.countDocuments({ user: buyerId, relatedId: testOrder._id, type: 'PAYMENT' });
+    assert.strictEqual(notifCount2, 1, 'Repeated webhook must NOT create duplicate notifications');
+  });
+
+  test('Concurrency: Concurrent valid webhooks cannot cause duplicate fulfillment', async () => {
+    const testOrder = await Order.create({
+      buyer: buyerId,
+      items: [{ product: product1Id, name: 'Item', price: 200, quantity: 1, seller: seller1Id }],
+      subtotal: 200,
+      deliveryFee: 50,
+      total: 250,
+      paymentMethod: 'CHAPA',
+      orderStatus: 'PENDING_PAYMENT',
+      paymentStatus: 'PENDING',
+      deliveryStatus: 'PENDING',
+      deliveryAddress: { streetAddress: 'Kebele 01', subCity: 'Bole', city: 'Adama', phoneNumber: '+251911000000' },
+      trackingNumber: 'TRK-CONCURRENT-001',
+    });
+
+    const testTxRef = `TX-CONCURRENT-${Date.now()}`;
+    await Payment.create({
+      order: testOrder._id,
+      provider: 'CHAPA',
+      transactionId: testTxRef,
+      amount: 250,
+      status: 'PENDING',
+    });
+
+    // Fire 2 concurrent webhook requests simultaneously
+    const [res1, res2] = await Promise.all([
+      api('POST', '/payments/webhook/mock', { tx_ref: testTxRef, status: 'success' }),
+      api('POST', '/payments/webhook/mock', { tx_ref: testTxRef, status: 'success' }),
+    ]);
+
+    assert.strictEqual(res1.status, 200);
+    assert.strictEqual(res2.status, 200);
+
+    const deliveryCount = await Delivery.countDocuments({ order: testOrder._id });
+    assert.strictEqual(deliveryCount, 1, 'Concurrent webhooks must create exactly 1 delivery record');
+
+    const notifCount = await Notification.countDocuments({ user: buyerId, relatedId: testOrder._id, type: 'PAYMENT' });
+    assert.strictEqual(notifCount, 1, 'Concurrent webhooks must create exactly 1 notification');
+
+    const finalOrder = await Order.findById(testOrder._id);
+    assert.strictEqual(finalOrder.paymentStatus, 'PAID');
+    assert.strictEqual(finalOrder.orderStatus, 'CONFIRMED');
+  });
+
+  test('Validation: Verification response rejects missing or mismatched transaction reference', async () => {
+    const paymentController = require('../src/controllers/paymentController');
+    const PaymentService = require('../src/services/PaymentService');
+    const originalVerify = PaymentService.verify;
+
+    try {
+      const order = await Order.create({
+        buyer: buyerId,
+        items: [{ product: product1Id, name: 'Item', price: 500, quantity: 1, seller: seller1Id }],
+        subtotal: 500, deliveryFee: 0, total: 500, paymentMethod: 'CHAPA',
+        orderStatus: 'PENDING_PAYMENT', paymentStatus: 'PENDING', deliveryStatus: 'PENDING',
+        deliveryAddress: { streetAddress: 'Adama', subCity: 'Bole', city: 'Adama', phoneNumber: '0911000000' },
+        trackingNumber: 'TRK-VAL-01',
+      });
+      await Payment.create({
+        order: order._id, provider: 'CHAPA', transactionId: 'TX-TEST-VALIDATE-01', amount: 500, status: 'PENDING',
+      });
+
+      const invokeWebhook = (reqObj) =>
+        new Promise((resolve, reject) => {
+          let code = 200;
+          let body = {};
+          const mockRes = {
+            status(c) {
+              code = c;
+              return this;
+            },
+            json(b) {
+              body = b;
+              resolve({ status: code, body });
+              return this;
+            },
+          };
+          paymentController.handleWebhook(reqObj, mockRes, (err) => {
+            if (err) reject(err);
+            else resolve({ status: code, body });
+          });
+        });
+
+      const req = {
+        params: { provider: 'chapa' },
+        body: { tx_ref: 'TX-TEST-VALIDATE-01', status: 'success' },
+        headers: {},
+      };
+
+      process.env.CHAPA_SECRET_KEY = 'test_key';
+
+      // 1. Missing transactionId in verification response
+      PaymentService.verify = async () => ({
+        status: 'PAID',
+        transactionId: null, // missing
+        currency: 'ETB',
+        amount: 500,
+      });
+
+      const res1 = await invokeWebhook(req);
+      assert.strictEqual(res1.status, 400, 'Must reject when verification transaction reference is missing');
+
+      // 2. Mismatched transactionId in verification response
+      PaymentService.verify = async () => ({
+        status: 'PAID',
+        transactionId: 'TX-DIFFERENT-REF', // mismatched
+        currency: 'ETB',
+        amount: 500,
+      });
+      const res2 = await invokeWebhook(req);
+      assert.strictEqual(res2.status, 400, 'Must reject when verification transaction reference mismatches');
+    } finally {
+      PaymentService.verify = originalVerify;
+      delete process.env.CHAPA_SECRET_KEY;
+    }
+  });
+
+  test('Validation: Verification response rejects missing or mismatched currency', async () => {
+    const paymentController = require('../src/controllers/paymentController');
+    const PaymentService = require('../src/services/PaymentService');
+    const originalVerify = PaymentService.verify;
+
+    try {
+      const order = await Order.create({
+        buyer: buyerId,
+        items: [{ product: product1Id, name: 'Item', price: 500, quantity: 1, seller: seller1Id }],
+        subtotal: 500, deliveryFee: 0, total: 500, paymentMethod: 'CHAPA',
+        orderStatus: 'PENDING_PAYMENT', paymentStatus: 'PENDING', deliveryStatus: 'PENDING',
+        deliveryAddress: { streetAddress: 'Adama', subCity: 'Bole', city: 'Adama', phoneNumber: '0911000000' },
+        trackingNumber: 'TRK-VAL-02',
+      });
+      await Payment.create({
+        order: order._id, provider: 'CHAPA', transactionId: 'TX-TEST-CURRENCY-01', amount: 500, status: 'PENDING',
+      });
+
+      const invokeWebhook = (reqObj) =>
+        new Promise((resolve, reject) => {
+          let code = 200;
+          let body = {};
+          const mockRes = {
+            status(c) {
+              code = c;
+              return this;
+            },
+            json(b) {
+              body = b;
+              resolve({ status: code, body });
+              return this;
+            },
+          };
+          paymentController.handleWebhook(reqObj, mockRes, (err) => {
+            if (err) reject(err);
+            else resolve({ status: code, body });
+          });
+        });
+
+      const req = {
+        params: { provider: 'chapa' },
+        body: { tx_ref: 'TX-TEST-CURRENCY-01', status: 'success' },
+        headers: {},
+      };
+      process.env.CHAPA_SECRET_KEY = 'test_key';
+
+      // 1. Missing currency
+      PaymentService.verify = async () => ({
+        status: 'PAID',
+        transactionId: 'TX-TEST-CURRENCY-01',
+        currency: null,
+        amount: 500,
+      });
+      const res1 = await invokeWebhook(req);
+      assert.strictEqual(res1.status, 400, 'Must reject when currency is missing');
+
+      // 2. Mismatched currency
+      PaymentService.verify = async () => ({
+        status: 'PAID',
+        transactionId: 'TX-TEST-CURRENCY-01',
+        currency: 'USD',
+        amount: 500,
+      });
+      const res2 = await invokeWebhook(req);
+      assert.strictEqual(res2.status, 400, 'Must reject when currency is not ETB');
+    } finally {
+      PaymentService.verify = originalVerify;
+      delete process.env.CHAPA_SECRET_KEY;
+    }
+  });
+
+  test('Validation: Verification response rejects invalid, missing, or non-finite amounts', async () => {
+    const paymentController = require('../src/controllers/paymentController');
+    const PaymentService = require('../src/services/PaymentService');
+    const originalVerify = PaymentService.verify;
+
+    try {
+      const order = await Order.create({
+        buyer: buyerId,
+        items: [{ product: product1Id, name: 'Item', price: 500, quantity: 1, seller: seller1Id }],
+        subtotal: 500, deliveryFee: 0, total: 500, paymentMethod: 'CHAPA',
+        orderStatus: 'PENDING_PAYMENT', paymentStatus: 'PENDING', deliveryStatus: 'PENDING',
+        deliveryAddress: { streetAddress: 'Adama', subCity: 'Bole', city: 'Adama', phoneNumber: '0911000000' },
+        trackingNumber: 'TRK-VAL-03',
+      });
+      await Payment.create({
+        order: order._id, provider: 'CHAPA', transactionId: 'TX-TEST-AMOUNT-01', amount: 500, status: 'PENDING',
+      });
+
+      const invokeWebhook = (reqObj) =>
+        new Promise((resolve, reject) => {
+          let code = 200;
+          let body = {};
+          const mockRes = {
+            status(c) {
+              code = c;
+              return this;
+            },
+            json(b) {
+              body = b;
+              resolve({ status: code, body });
+              return this;
+            },
+          };
+          paymentController.handleWebhook(reqObj, mockRes, (err) => {
+            if (err) reject(err);
+            else resolve({ status: code, body });
+          });
+        });
+
+      const req = {
+        params: { provider: 'chapa' },
+        body: { tx_ref: 'TX-TEST-AMOUNT-01', status: 'success' },
+        headers: {},
+      };
+      process.env.CHAPA_SECRET_KEY = 'test_key';
+
+      // 1. Missing amount
+      PaymentService.verify = async () => ({
+        status: 'PAID',
+        transactionId: 'TX-TEST-AMOUNT-01',
+        currency: 'ETB',
+        amount: null,
+      });
+      const res1 = await invokeWebhook(req);
+      assert.strictEqual(res1.status, 400, 'Must reject null amount');
+
+      // 2. Non-finite amount (Infinity)
+      PaymentService.verify = async () => ({
+        status: 'PAID',
+        transactionId: 'TX-TEST-AMOUNT-01',
+        currency: 'ETB',
+        amount: Infinity,
+      });
+      const res2 = await invokeWebhook(req);
+      assert.strictEqual(res2.status, 400, 'Must reject Infinity amount');
+
+      // 3. Amount mismatch
+      PaymentService.verify = async () => ({
+        status: 'PAID',
+        transactionId: 'TX-TEST-AMOUNT-01',
+        currency: 'ETB',
+        amount: 100,
+      });
+      const res3 = await invokeWebhook(req);
+      assert.strictEqual(res3.status, 400, 'Must reject mismatched amount');
+    } finally {
+      PaymentService.verify = originalVerify;
+      delete process.env.CHAPA_SECRET_KEY;
+    }
   });
 
   // ────────────────────────────────────────────────────────────────────────────
