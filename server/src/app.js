@@ -102,7 +102,15 @@ const checkoutLimiter = rateLimit({
 });
 
 // Body parser, reading data from body into req.body (allow up to 25MB for receipts & photos)
-app.use(express.json({ limit: '25mb' }));
+// Preserves rawBody buffer for cryptographic webhook HMAC-SHA256 signature verification
+app.use(
+  express.json({
+    limit: '25mb',
+    verify: (req, res, buf) => {
+      req.rawBody = buf.toString('utf8');
+    },
+  })
+);
 app.use(express.urlencoded({ extended: true, limit: '25mb' }));
 app.use(cookieParser());
 
