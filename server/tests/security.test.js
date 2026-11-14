@@ -685,6 +685,193 @@ test.describe('Full Integration Test Suite', () => {
     assert.strictEqual(finalOrder.orderStatus, 'CONFIRMED');
   });
 
+  test('Database Index: One order cannot receive multiple Delivery documents (unique index)', async () => {
+    await Delivery.init(); // ensure unique index is built in MongoDB
+    const testOrder = await Order.create({
+      buyer: buyerId,
+      items: [{ product: product1Id, name: 'Item', price: 100, quantity: 1, seller: seller1Id }],
+      subtotal: 100, deliveryFee: 0, total: 100, paymentMethod: 'CHAPA',
+      orderStatus: 'PENDING_PAYMENT', paymentStatus: 'PENDING', deliveryStatus: 'PENDING',
+      deliveryAddress: { streetAddress: 'Adama', subCity: 'Bole', city: 'Adama', phoneNumber: '0911000000' },
+      trackingNumber: `TRK-INDEX-DEL-${Date.now()}`,
+    });
+
+    await Delivery.create({ order: testOrder._id, status: 'PENDING', fee: 0 });
+
+    // Attempting to create a duplicate delivery for the same order must be rejected by MongoDB unique index
+    await assert.rejects(
+      async () => {
+        await Delivery.create({ order: testOrder._id, status: 'PENDING', fee: 0 });
+      },
+      (err) => err.code === 11000,
+      'MongoDB must reject duplicate delivery record with code 11000'
+    );
+  });
+
+  test('Database Index: One user/order/type combination cannot receive duplicate PAYMENT notifications (partial unique index)', async () => {
+    await Notification.init(); // ensure partial unique index is built in MongoDB
+    const testOrder = await Order.create({
+      buyer: buyerId,
+      items: [{ product: product1Id, name: 'Item', price: 100, quantity: 1, seller: seller1Id }],
+      subtotal: 100, deliveryFee: 0, total: 100, paymentMethod: 'CHAPA',
+      orderStatus: 'PENDING_PAYMENT', paymentStatus: 'PENDING', deliveryStatus: 'PENDING',
+      deliveryAddress: { streetAddress: 'Adama', subCity: 'Bole', city: 'Adama', phoneNumber: '0911000000' },
+      trackingNumber: `TRK-INDEX-NOTIF-${Date.now()}`,
+    });
+
+    await Notification.create({
+      user: buyerId,
+      title: 'Payment Confirmed',
+      message: 'Your payment was received.',
+      type: 'PAYMENT',
+      relatedId: testOrder._id,
+    });
+
+    // Attempting to create duplicate PAYMENT notification for the same user and order must be rejected
+    await assert.rejects(
+      async () => {
+        await Notification.create({
+          user: buyerId,
+          title: 'Duplicate Payment Confirmed',
+          message: 'Your payment was received again.',
+          type: 'PAYMENT',
+          relatedId: testOrder._id,
+        });
+      },
+      (err) => err.code === 11000,
+      'MongoDB must reject duplicate PAYMENT notification with code 11000'
+    );
+  });
+
+  test('Database Index: Non-payment notification types remain unaffected by the partial unique index', async () => {
+    await Notification.init();
+    const testOrder = await Order.create({
+      buyer: buyerId,
+      items: [{ product: product1Id, name: 'Item', price: 100, quantity: 1, seller: seller1Id }],
+      subtotal: 100, deliveryFee: 0, total: 100, paymentMethod: 'CHAPA',
+      orderStatus: 'PENDING_PAYMENT', paymentStatus: 'PENDING', deliveryStatus: 'PENDING',
+      deliveryAddress: { streetAddress: 'Adama', subCity: 'Bole', city: 'Adama', phoneNumber: '0911000000' },
+      trackingNumber: `TRK-NON-PAY-NOTIF-${Date.now()}`,
+    });
+
+    // Create first ORDER notification
+    const n1 = await Notification.create({
+      user: buyerId,
+      title: 'Order Placed',
+      message: 'Your order was placed.',
+      type: 'ORDER',
+      relatedId: testOrder._id,
+    });
+
+    // Create second ORDER notification for the same user and order (e.g. Order Shipped)
+    const n2 = await Notification.create({
+      user: buyerId,
+      title: 'Order Shipped',
+      message: 'Your order is on the way.',
+      type: 'ORDER',
+      relatedId: testOrder._id,
+    });
+
+    assert.ok(n1._id);
+    assert.ok(n2._id);
+    const count = await Notification.countDocuments({ user: buyerId, relatedId: testOrder._id, type: 'ORDER' });
+    assert.strictEqual(count, 2, 'Non-payment notifications must allow multiple entries per order');
+  });
+
+  test('Safe Upsert: Duplicate-key conflicts are handled safely after verifying existing record', async () => {
+    await Delivery.init();
+    await Notification.init();
+    const testOrder = await Order.create({
+      buyer: buyerId,
+      items: [{ product: product1Id, name: 'Item', price: 150, quantity: 1, seller: seller1Id }],
+      subtotal: 150, deliveryFee: 0, total: 150, paymentMethod: 'CHAPA',
+      orderStatus: 'PENDING_PAYMENT', paymentStatus: 'PENDING', deliveryStatus: 'PENDING',
+      deliveryAddress: { streetAddress: 'Adama', subCity: 'Bole', city: 'Adama', phoneNumber: '0911000000' },
+      trackingNumber: `TRK-SAFE-UPSERT-${Date.now()}`,
+    });
+
+    // Pre-create delivery and notification
+    await Delivery.create({ order: testOrder._id, status: 'PENDING', fee: 0 });
+    await Notification.create({
+      user: buyerId,
+      title: 'Payment Success via Webhook',
+      message: 'Paid',
+      type: 'PAYMENT',
+      relatedId: testOrder._id,
+    });
+
+    // Mock Delivery.findOneAndUpdate to simulate an E11000 collision on the upsert
+    const originalDeliveryFindOneAndUpdate = Delivery.findOneAndUpdate;
+    let deliveryCollisionSimulated = false;
+    Delivery.findOneAndUpdate = async function (...args) {
+      deliveryCollisionSimulated = true;
+      const err = new Error('E11000 duplicate key error');
+      err.code = 11000;
+      throw err;
+    };
+
+    try {
+      const testTxRef = `TX-SAFE-UPSERT-${Date.now()}`;
+      await Payment.create({
+        order: testOrder._id,
+        provider: 'CHAPA',
+        transactionId: testTxRef,
+        amount: 150,
+        status: 'PENDING',
+      });
+
+      const res = await api('POST', '/payments/webhook/mock', {
+        tx_ref: testTxRef,
+        status: 'success',
+      });
+
+      assert.strictEqual(res.status, 200);
+      assert.strictEqual(deliveryCollisionSimulated, true, 'Delivery E11000 collision was simulated');
+      const deliveryCount = await Delivery.countDocuments({ order: testOrder._id });
+      assert.strictEqual(deliveryCount, 1, 'Delivery must still exist exactly once');
+    } finally {
+      Delivery.findOneAndUpdate = originalDeliveryFindOneAndUpdate;
+    }
+  });
+
+  test('Safe Upsert: Unexpected database errors still propagate correctly', async () => {
+    const originalDeliveryFindOneAndUpdate = Delivery.findOneAndUpdate;
+    Delivery.findOneAndUpdate = async function (...args) {
+      const err = new Error('Connection lost to replica set');
+      err.code = 10000; // non-11000 error
+      throw err;
+    };
+
+    try {
+      const testOrder = await Order.create({
+        buyer: buyerId,
+        items: [{ product: product1Id, name: 'Item', price: 150, quantity: 1, seller: seller1Id }],
+        subtotal: 150, deliveryFee: 0, total: 150, paymentMethod: 'CHAPA',
+        orderStatus: 'PENDING_PAYMENT', paymentStatus: 'PENDING', deliveryStatus: 'PENDING',
+        deliveryAddress: { streetAddress: 'Adama', subCity: 'Bole', city: 'Adama', phoneNumber: '0911000000' },
+        trackingNumber: `TRK-DB-ERR-${Date.now()}`,
+      });
+      const testTxRef = `TX-DB-ERR-${Date.now()}`;
+      await Payment.create({
+        order: testOrder._id,
+        provider: 'CHAPA',
+        transactionId: testTxRef,
+        amount: 150,
+        status: 'PENDING',
+      });
+
+      const res = await api('POST', '/payments/webhook/mock', {
+        tx_ref: testTxRef,
+        status: 'success',
+      });
+
+      // Unexpected error must cause failure, not silent success
+      assert.strictEqual(res.status, 500, 'Unexpected database error must propagate and return HTTP 500');
+    } finally {
+      Delivery.findOneAndUpdate = originalDeliveryFindOneAndUpdate;
+    }
+  });
+
   test('Validation: Verification response rejects missing or mismatched transaction reference', async () => {
     const paymentController = require('../src/controllers/paymentController');
     const PaymentService = require('../src/services/PaymentService');
