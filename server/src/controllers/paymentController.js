@@ -717,72 +717,98 @@ exports.verifyOnlinePayment = asyncHandler(async (req, res, next) => {
     return next(new AppError('Transaction reference not found for this payment.', 400));
   }
 
-  // Idempotency: If payment is already marked PAID, return existing order
-  if (payment.status === 'PAID') {
-    const order = await Order.findById(payment.order);
-    return res.status(200).json({ success: true, status: 'PAID', order, message: 'Already verified' });
-  }
-
   const order = await Order.findById(payment.order);
   if (!order) return next(new AppError('Associated order not found.', 404));
 
+  const isOrderFulfilled =
+    order.paymentStatus === 'PAID' &&
+    ['CONFIRMED', 'DELIVERED', 'SHIPPED', 'PROCESSING', 'READY_FOR_DELIVERY'].includes(order.orderStatus);
+
+  // Idempotency: If both payment and order are already fulfilled, return existing order cleanly
+  if (payment.status === 'PAID' && isOrderFulfilled) {
+    return res.status(200).json({ success: true, status: 'PAID', order, message: 'Already verified' });
+  }
+
   // Downgrade protection: Do not alter an already confirmed or delivered order
-  if (order.paymentStatus === 'PAID' && ['CONFIRMED', 'DELIVERED', 'SHIPPED'].includes(order.orderStatus)) {
+  if (isOrderFulfilled) {
     return res.status(200).json({ success: true, status: 'PAID', order, message: 'Order already fulfilled and confirmed' });
   }
 
   const result = await PaymentService.verify(transactionId, provider);
 
   if (result.status === 'PAID') {
-    // Exact transaction reference guard
-    if (result.transactionId && result.transactionId !== payment.transactionId) {
-      console.error(`[SECURITY] Transaction reference mismatch: expected ${payment.transactionId}, got ${result.transactionId}`);
-      return next(new AppError('Payment transaction reference mismatch. Verification rejected.', 400));
+    // 1. Transaction reference must be present and exactly match
+    if (!result.transactionId || result.transactionId !== payment.transactionId) {
+      console.error(`[SECURITY] Transaction reference mismatch/missing: expected ${payment.transactionId}, got ${result.transactionId}`);
+      return next(new AppError('Payment transaction reference mismatch or missing. Verification rejected.', 400));
     }
 
-    // Currency mismatch guard
-    if (result.currency && result.currency !== 'ETB') {
-      console.error(`[SECURITY] Currency mismatch on ${transactionId}: expected ETB, got ${result.currency}`);
-      return next(new AppError('Payment currency mismatch detected. Only ETB is accepted.', 400));
+    // 2. Currency must be present and strictly match ETB
+    if (!result.currency || result.currency !== 'ETB') {
+      console.error(`[SECURITY] Currency invalid or missing on ${transactionId}: expected ETB, got ${result.currency}`);
+      return next(new AppError('Payment currency mismatch or missing. Only ETB is accepted.', 400));
     }
 
-    // Strict amount mismatch guard (allow floating-point delta <= 0.01 ETB)
-    if (result.amount !== undefined && Math.abs(result.amount - payment.amount) > 0.01) {
-      console.error(`[SECURITY] Amount mismatch on ${transactionId}: expected ${payment.amount}, got ${result.amount}`);
+    // 3. Strict amount validation: must be numeric, finite, and match stored payment amount within tolerance
+    if (
+      result.amount === undefined ||
+      result.amount === null ||
+      typeof result.amount !== 'number' ||
+      !Number.isFinite(result.amount) ||
+      Math.abs(result.amount - payment.amount) > 0.01
+    ) {
+      console.error(`[SECURITY] Amount mismatch or invalid on ${transactionId}: expected ${payment.amount}, got ${result.amount}`);
       payment.status = 'FAILED';
       await payment.save();
       order.paymentStatus = 'FAILED';
       await order.save();
-      return next(new AppError('Payment amount mismatch detected. Payment rejected for security.', 400));
+      return next(new AppError('Payment amount mismatch, missing, or invalid. Payment rejected for security.', 400));
     }
 
-    // Atomic update prevents concurrent duplicate verification
-    const updatedPayment = await Payment.findOneAndUpdate(
-      { _id: payment._id, status: { $ne: 'PAID' } },
-      { $set: { status: 'PAID' } },
+    // 1. Atomically ensure Payment is marked PAID
+    if (payment.status !== 'PAID') {
+      await Payment.findOneAndUpdate(
+        { _id: payment._id, status: { $ne: 'PAID' } },
+        { $set: { status: 'PAID' } }
+      );
+      payment.status = 'PAID';
+    }
+
+    // 2. Atomically ensure Order is marked PAID & CONFIRMED (recovers incomplete order if payment was already PAID)
+    const updatedOrder = await Order.findOneAndUpdate(
+      { _id: order._id, paymentStatus: { $ne: 'PAID' } },
+      { $set: { paymentStatus: 'PAID', orderStatus: 'CONFIRMED' } },
       { new: true }
     );
-
-    if (!updatedPayment) {
-      return res.status(200).json({ success: true, status: 'PAID', order, message: 'Already verified concurrently' });
+    if (updatedOrder) {
+      order.paymentStatus = updatedOrder.paymentStatus;
+      order.orderStatus = updatedOrder.orderStatus;
+    } else {
+      order.paymentStatus = 'PAID';
+      if (order.orderStatus === 'PENDING_PAYMENT') {
+        order.orderStatus = 'CONFIRMED';
+      }
     }
-
-    order.paymentStatus = 'PAID';
-    order.orderStatus = 'CONFIRMED';
-    await order.save();
 
     const existingDelivery = await Delivery.findOne({ order: order._id });
     if (!existingDelivery) {
       await Delivery.create({ order: order._id, status: 'PENDING', fee: order.deliveryFee || 0 });
     }
 
-    await Notification.create({
+    const existingNotif = await Notification.findOne({
       user: order.buyer,
-      title: 'Payment Successful',
-      message: `We verified your payment for order ${order.trackingNumber}.`,
-      type: 'PAYMENT',
       relatedId: order._id,
+      type: 'PAYMENT',
     });
+    if (!existingNotif) {
+      await Notification.create({
+        user: order.buyer,
+        title: 'Payment Successful',
+        message: `We verified your payment for order ${order.trackingNumber}.`,
+        type: 'PAYMENT',
+        relatedId: order._id,
+      });
+    }
   } else {
     if (order.paymentStatus !== 'PAID') {
       payment.status = 'FAILED';
@@ -849,16 +875,20 @@ exports.handleWebhook = asyncHandler(async (req, res, next) => {
   const payment = await Payment.findOne({ transactionId: txRef });
   if (!payment) return res.status(404).json({ success: false, message: 'Transaction not found' });
 
-  // Idempotency: If already paid, return 200 without reprocessing
-  if (payment.status === 'PAID') {
-    return res.status(200).json({ success: true, status: 'PAID', message: 'Already processed' });
-  }
-
   const order = await Order.findById(payment.order);
   if (!order) return res.status(404).json({ success: false, message: 'Order not found' });
 
+  const isOrderFulfilled =
+    order.paymentStatus === 'PAID' &&
+    ['CONFIRMED', 'DELIVERED', 'SHIPPED', 'PROCESSING', 'READY_FOR_DELIVERY'].includes(order.orderStatus);
+
+  // Idempotency: If both payment and order are already fulfilled, return 200 without reprocessing
+  if (payment.status === 'PAID' && isOrderFulfilled) {
+    return res.status(200).json({ success: true, status: 'PAID', message: 'Already processed and fulfilled' });
+  }
+
   // Prevent downgrade of already confirmed or delivered orders if a late failed webhook arrives
-  if (order.paymentStatus === 'PAID' && ['CONFIRMED', 'DELIVERED', 'SHIPPED'].includes(order.orderStatus)) {
+  if (isOrderFulfilled) {
     return res.status(200).json({ success: true, status: 'PAID', message: 'Order already fulfilled and confirmed' });
   }
 
@@ -876,14 +906,28 @@ exports.handleWebhook = asyncHandler(async (req, res, next) => {
     if (process.env.CHAPA_SECRET_KEY && !txRef.startsWith('TX-MOCK-')) {
       const verifyResult = await PaymentService.verify(txRef, 'CHAPA');
       if (verifyResult.status === 'PAID') {
-        if (verifyResult.transactionId && verifyResult.transactionId !== payment.transactionId) {
-          return res.status(400).json({ success: false, message: 'Transaction reference mismatch in verified payment' });
+        // 1. Transaction reference must be present and exactly match
+        if (!verifyResult.transactionId || verifyResult.transactionId !== payment.transactionId) {
+          console.error(`[SECURITY] Transaction reference mismatch/missing: expected ${payment.transactionId}, got ${verifyResult.transactionId}`);
+          return res.status(400).json({ success: false, message: 'Transaction reference mismatch or missing in verification' });
         }
-        if (verifyResult.currency && verifyResult.currency !== 'ETB') {
-          return res.status(400).json({ success: false, message: 'Currency mismatch: expected ETB' });
+
+        // 2. Currency must be present and strictly match ETB
+        if (!verifyResult.currency || verifyResult.currency !== 'ETB') {
+          console.error(`[SECURITY] Currency invalid or missing on ${txRef}: expected ETB, got ${verifyResult.currency}`);
+          return res.status(400).json({ success: false, message: 'Currency missing or mismatch: expected ETB' });
         }
-        if (verifyResult.amount === undefined || isNaN(verifyResult.amount) || Math.abs(verifyResult.amount - payment.amount) > 0.01) {
-          return res.status(400).json({ success: false, message: 'Amount mismatch in verified transaction' });
+
+        // 3. Amount must be present, numeric, finite, and match stored payment amount within tolerance
+        if (
+          verifyResult.amount === undefined ||
+          verifyResult.amount === null ||
+          typeof verifyResult.amount !== 'number' ||
+          !Number.isFinite(verifyResult.amount) ||
+          Math.abs(verifyResult.amount - payment.amount) > 0.01
+        ) {
+          console.error(`[SECURITY] Amount mismatch or invalid on ${txRef}: expected ${payment.amount}, got ${verifyResult.amount}`);
+          return res.status(400).json({ success: false, message: 'Amount missing, invalid, or mismatch in verified transaction' });
         }
         status = 'PAID';
       } else {
@@ -893,33 +937,52 @@ exports.handleWebhook = asyncHandler(async (req, res, next) => {
   }
 
   if (status === 'success' || status === 'PAID') {
-    // Atomic state update prevents concurrent duplicate fulfillment races
-    const updatedPayment = await Payment.findOneAndUpdate(
-      { _id: payment._id, status: { $ne: 'PAID' } },
-      { $set: { status: 'PAID' } },
-      { new: true }
-    );
-
-    if (!updatedPayment) {
-      return res.status(200).json({ success: true, status: 'PAID', message: 'Already processed concurrently' });
+    // 1. Atomically ensure Payment is marked PAID
+    if (payment.status !== 'PAID') {
+      await Payment.findOneAndUpdate(
+        { _id: payment._id, status: { $ne: 'PAID' } },
+        { $set: { status: 'PAID' } }
+      );
+      payment.status = 'PAID';
     }
 
-    order.paymentStatus = 'PAID';
-    order.orderStatus = 'CONFIRMED';
-    await order.save();
+    // 2. Atomically ensure Order is marked PAID & CONFIRMED (recovers incomplete order if payment was already PAID)
+    const updatedOrder = await Order.findOneAndUpdate(
+      { _id: order._id, paymentStatus: { $ne: 'PAID' } },
+      { $set: { paymentStatus: 'PAID', orderStatus: 'CONFIRMED' } },
+      { new: true }
+    );
+    if (updatedOrder) {
+      order.paymentStatus = updatedOrder.paymentStatus;
+      order.orderStatus = updatedOrder.orderStatus;
+    } else {
+      order.paymentStatus = 'PAID';
+      if (order.orderStatus === 'PENDING_PAYMENT') {
+        order.orderStatus = 'CONFIRMED';
+      }
+    }
 
+    // Ensure Delivery record exists exactly once
     const existingDelivery = await Delivery.findOne({ order: order._id });
     if (!existingDelivery) {
       await Delivery.create({ order: order._id, status: 'PENDING', fee: order.deliveryFee || 0 });
     }
 
-    await Notification.create({
+    // Ensure Notification exists exactly once
+    const existingNotif = await Notification.findOne({
       user: order.buyer,
-      title: 'Payment Success via Webhook',
-      message: `Your payment was processed for order ${order.trackingNumber}.`,
-      type: 'PAYMENT',
       relatedId: order._id,
+      type: 'PAYMENT',
     });
+    if (!existingNotif) {
+      await Notification.create({
+        user: order.buyer,
+        title: 'Payment Success via Webhook',
+        message: `Your payment was processed for order ${order.trackingNumber}.`,
+        type: 'PAYMENT',
+        relatedId: order._id,
+      });
+    }
   } else {
     if (order.paymentStatus !== 'PAID') {
       payment.status = 'FAILED';
