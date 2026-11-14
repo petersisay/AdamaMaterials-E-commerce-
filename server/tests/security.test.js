@@ -35,10 +35,10 @@ const closeAll = async () => {
   if (mongoServer) await mongoServer.stop();
 };
 
-const api = async (method, path, body, cookie) => {
+const api = async (method, path, body, cookie, extraHeaders = {}) => {
   const opts = {
     method,
-    headers: { 'Content-Type': 'application/json', ...(cookie && { Cookie: cookie }) },
+    headers: { 'Content-Type': 'application/json', ...(cookie && { Cookie: cookie }), ...extraHeaders },
     ...(body && { body: JSON.stringify(body) }),
   };
   const res = await fetch(`${serverUrl}${path}`, opts);
@@ -440,6 +440,85 @@ test.describe('Full Integration Test Suite', () => {
       status: 'success',
     });
     assert.strictEqual(res.status, 404);
+  });
+
+  test('Webhook: Reject missing signature when CHAPA_WEBHOOK_SECRET is configured', async () => {
+    const originalSecret = process.env.CHAPA_WEBHOOK_SECRET;
+    process.env.CHAPA_WEBHOOK_SECRET = 'test_webhook_secret_key_123';
+    try {
+      const res = await api('POST', '/payments/webhook/chapa', {
+        tx_ref: 'TX-MOCK-SAMPLE-REF',
+        status: 'success',
+      });
+      assert.strictEqual(res.status, 401, 'Must reject unsigned webhook when secret is set');
+    } finally {
+      process.env.CHAPA_WEBHOOK_SECRET = originalSecret;
+    }
+  });
+
+  test('Webhook: Reject invalid HMAC-SHA256 signature', async () => {
+    const originalSecret = process.env.CHAPA_WEBHOOK_SECRET;
+    process.env.CHAPA_WEBHOOK_SECRET = 'test_webhook_secret_key_123';
+    try {
+      const res = await api(
+        'POST',
+        '/payments/webhook/chapa',
+        { tx_ref: 'TX-MOCK-SAMPLE-REF', status: 'success' },
+        null,
+        { 'x-chapa-signature': 'deadbeef0123456789abcdefdeadbeef0123456789abcdefdeadbeef01234567' }
+      );
+      assert.strictEqual(res.status, 401, 'Must reject invalid signature');
+    } finally {
+      process.env.CHAPA_WEBHOOK_SECRET = originalSecret;
+    }
+  });
+
+  test('Webhook: Mock provider is rejected in production mode', async () => {
+    const originalEnv = process.env.NODE_ENV;
+    process.env.NODE_ENV = 'production';
+    try {
+      const paymentController = require('../src/controllers/paymentController');
+      let statusSent = 0;
+      let bodySent = {};
+      const req = {
+        params: { provider: 'mock' },
+        body: { tx_ref: 'TX-MOCK-PROD-TEST', status: 'success' },
+        headers: {},
+      };
+      const res = {
+        status(code) {
+          statusSent = code;
+          return this;
+        },
+        json(data) {
+          bodySent = data;
+          return this;
+        },
+      };
+      await paymentController.handleWebhook(req, res, () => {});
+      assert.strictEqual(statusSent, 403, 'Must reject mock provider in production with 403');
+      assert.ok(bodySent.message?.includes('Mock provider disabled in production'));
+    } finally {
+      process.env.NODE_ENV = originalEnv;
+    }
+  });
+
+  test('Webhook: Late failed webhook cannot downgrade already paid/delivered order', async () => {
+    const payment = await Payment.findById(paymentId);
+    assert.strictEqual(payment.status, 'PAID');
+    const orderBefore = await Order.findById(orderId);
+    assert.strictEqual(orderBefore.paymentStatus, 'PAID');
+
+    // Send a late/failed webhook with same tx_ref
+    const res = await api('POST', '/payments/webhook/mock', {
+      tx_ref: payment.transactionId,
+      status: 'failed',
+    });
+    assert.strictEqual(res.status, 200);
+
+    const orderAfter = await Order.findById(orderId);
+    assert.strictEqual(orderAfter.orderStatus, orderBefore.orderStatus, 'Order status must not downgrade');
+    assert.strictEqual(orderAfter.paymentStatus, 'PAID', 'Payment status must not downgrade from PAID');
   });
 
   // ────────────────────────────────────────────────────────────────────────────
