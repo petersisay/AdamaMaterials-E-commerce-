@@ -210,12 +210,18 @@ class ChapaProvider extends PaymentProvider {
       });
       if (response.data?.status === 'success') {
         const d = response.data.data;
-        if (d.status === 'success') {
+        if (d && d.status === 'success') {
+          const rawAmount = d.amount;
+          const parsedAmount =
+            rawAmount !== undefined && rawAmount !== null && rawAmount !== '' && !isNaN(Number(rawAmount))
+              ? Number(rawAmount)
+              : null;
+
           return {
             status: 'PAID',
-            transactionId: d.tx_ref,
-            amount: parseFloat(d.amount),
-            currency: d.currency || 'ETB',
+            transactionId: d.tx_ref || null,
+            amount: parsedAmount,
+            currency: d.currency || null,
             rawData: d,
           };
         }
