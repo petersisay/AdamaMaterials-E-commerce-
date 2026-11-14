@@ -49,6 +49,76 @@ function hashToken(raw) {
   return crypto.createHash('sha256').update(raw).digest('hex');
 }
 
+/**
+ * Safely ensure a Delivery record exists for an order under concurrency.
+ * If a concurrent request races and throws E11000 duplicate key error,
+ * confirms that the expected Delivery record exists for this order.
+ */
+async function safeUpsertDelivery(order) {
+  try {
+    await Delivery.findOneAndUpdate(
+      { order: order._id },
+      {
+        $setOnInsert: {
+          order: order._id,
+          status: 'PENDING',
+          fee: order.deliveryFee || 0,
+        },
+      },
+      { upsert: true, new: true }
+    );
+  } catch (err) {
+    if (err.code === 11000) {
+      const exists = await Delivery.findOne({ order: order._id });
+      if (!exists) {
+        throw new Error(`Duplicate key conflict on Delivery, but expected delivery for order ${order._id} was not found.`);
+      }
+    } else {
+      throw err;
+    }
+  }
+}
+
+/**
+ * Safely ensure a PAYMENT Notification exists for an order under concurrency.
+ * If a concurrent request races and throws E11000 duplicate key error,
+ * confirms that the expected PAYMENT notification exists for this user and order.
+ */
+async function safeUpsertPaymentNotification(order, title, message) {
+  try {
+    await Notification.findOneAndUpdate(
+      {
+        user: order.buyer,
+        relatedId: order._id,
+        type: 'PAYMENT',
+      },
+      {
+        $setOnInsert: {
+          user: order.buyer,
+          title,
+          message,
+          type: 'PAYMENT',
+          relatedId: order._id,
+        },
+      },
+      { upsert: true, new: true }
+    );
+  } catch (err) {
+    if (err.code === 11000) {
+      const exists = await Notification.findOne({
+        user: order.buyer,
+        relatedId: order._id,
+        type: 'PAYMENT',
+      });
+      if (!exists) {
+        throw new Error(`Duplicate key conflict on Notification, but expected payment notification for order ${order._id} was not found.`);
+      }
+    } else {
+      throw err;
+    }
+  }
+}
+
 // ─────────────────────────────────────────────────────────────────────────────
 // 0. Generate Bot Deep Link — Buyer calls this after placing a Bank Transfer order
 //    Returns a Telegram deep link with a one-time secure token embedded.
@@ -790,34 +860,11 @@ exports.verifyOnlinePayment = asyncHandler(async (req, res, next) => {
       }
     }
 
-    await Delivery.findOneAndUpdate(
-      { order: order._id },
-      {
-        $setOnInsert: {
-          order: order._id,
-          status: 'PENDING',
-          fee: order.deliveryFee || 0,
-        },
-      },
-      { upsert: true, new: true }
-    );
-
-    await Notification.findOneAndUpdate(
-      {
-        user: order.buyer,
-        relatedId: order._id,
-        type: 'PAYMENT',
-      },
-      {
-        $setOnInsert: {
-          user: order.buyer,
-          title: 'Payment Successful',
-          message: `We verified your payment for order ${order.trackingNumber}.`,
-          type: 'PAYMENT',
-          relatedId: order._id,
-        },
-      },
-      { upsert: true, new: true }
+    await safeUpsertDelivery(order);
+    await safeUpsertPaymentNotification(
+      order,
+      'Payment Successful',
+      `We verified your payment for order ${order.trackingNumber}.`
     );
   } else {
     if (order.paymentStatus !== 'PAID') {
@@ -972,36 +1019,12 @@ exports.handleWebhook = asyncHandler(async (req, res, next) => {
       }
     }
 
-    // Ensure Delivery record exists exactly once (atomic upsert avoids concurrency duplicates)
-    await Delivery.findOneAndUpdate(
-      { order: order._id },
-      {
-        $setOnInsert: {
-          order: order._id,
-          status: 'PENDING',
-          fee: order.deliveryFee || 0,
-        },
-      },
-      { upsert: true, new: true }
-    );
-
-    // Ensure Notification exists exactly once (atomic upsert avoids concurrency duplicates)
-    await Notification.findOneAndUpdate(
-      {
-        user: order.buyer,
-        relatedId: order._id,
-        type: 'PAYMENT',
-      },
-      {
-        $setOnInsert: {
-          user: order.buyer,
-          title: 'Payment Success via Webhook',
-          message: `Your payment was processed for order ${order.trackingNumber}.`,
-          type: 'PAYMENT',
-          relatedId: order._id,
-        },
-      },
-      { upsert: true, new: true }
+    // Ensure Delivery and Notification records exist exactly once with safe duplicate-key conflict handling
+    await safeUpsertDelivery(order);
+    await safeUpsertPaymentNotification(
+      order,
+      'Payment Success via Webhook',
+      `Your payment was processed for order ${order.trackingNumber}.`
     );
   } else {
     if (order.paymentStatus !== 'PAID') {
