@@ -105,63 +105,8 @@ const calcStraightLineKm = (lat1: number, lon1: number, lat2: number, lon2: numb
   return Math.round(R * c * 10) / 10;
 };
 
-const MarketplaceMapPage: React.FC = () => {
-  const navigate = useNavigate();
-  const { showToast } = useToast();
-
-  const [places, setPlaces] = useState<PlaceItem[]>([]);
-  const [loading, setLoading] = useState<boolean>(true);
-  const [searchQuery, setSearchQuery] = useState<string>('');
-  const [typeFilter, setTypeFilter] = useState<'ALL' | 'MARKETPLACE_SELLER' | 'ADMIN_MANAGED' | 'OSM_EXTERNAL'>('ALL');
-  
-  // Real Live Device/Browser GPS Location state
-  const [buyerLocation, setBuyerLocation] = useState<DetectedLocation | null>(null);
-  const [isLiveTracking, setIsLiveTracking] = useState<boolean>(false);
-  const [gpsError, setGpsError] = useState<string | null>(null);
-  const [gpsLoading, setGpsLoading] = useState<boolean>(false);
-  const [isFallbackMode, setIsFallbackMode] = useState<boolean>(false);
-
-  const [activePlace, setActivePlace] = useState<PlaceItem | null>(null);
-  const [routeInfo, setRouteInfo] = useState<RouteInfo | null>(null);
-  const [routeLoading, setRouteLoading] = useState<boolean>(false);
-
-  const mapContainerRef = useRef<HTMLDivElement>(null);
-  const mapInstanceRef = useRef<L.Map | null>(null);
-  const markersGroupRef = useRef<L.LayerGroup | null>(null);
-  const userMarkerRef = useRef<L.Marker | null>(null);
-  const accuracyCircleRef = useRef<L.Circle | null>(null);
-  const routeLayerRef = useRef<L.Polyline | null>(null);
-  const watchIdRef = useRef<number | null>(null);
-
-  // Filtered places computed via useMemo
-  const filteredPlaces = useMemo(() => {
-    return places.filter((p) => {
-      if (typeFilter !== 'ALL' && p.placeType !== typeFilter) return false;
-      if (searchQuery.trim()) {
-        const q = searchQuery.toLowerCase();
-        const matchTitle = p.title.toLowerCase().includes(q);
-        const matchAddress = p.address.toLowerCase().includes(q);
-        const matchMaterials = p.materials?.some((m) => m.toLowerCase().includes(q));
-        const matchCategory = p.category?.toLowerCase().includes(q);
-        if (!matchTitle && !matchAddress && !matchMaterials && !matchCategory) return false;
-      }
-      return true;
-    });
-  }, [places, typeFilter, searchQuery]);
-
-  // Update straight-line distances client-side for live position changes
-  const updatePlacesDistances = useCallback((lat: number, lng: number) => {
-    setPlaces((prev) =>
-      prev.map((p) => {
-        if (!p.coordinates || !Array.isArray(p.coordinates) || p.coordinates.length < 2) return p;
-        const dist = calcStraightLineKm(lat, lng, p.coordinates[0], p.coordinates[1]);
-        return { ...p, distanceKm: dist };
-      })
-    );
-  }, []);
-
-// Static fallback verified public recycling and scrap collection depots in Adama City
-// Used ONLY when live API is temporarily unreachable. Never fabricates active sellers or live inventory.
+// Static verified public recycling and scrap collection depots in Adama City
+// Pre-populated on mount so map is never empty and renders instantly even on slow network
 const FALLBACK_ADAMA_PLACES: PlaceItem[] = [
   {
     id: 'f1',
@@ -277,10 +222,67 @@ const FALLBACK_ADAMA_PLACES: PlaceItem[] = [
   },
 ];
 
+const MarketplaceMapPage: React.FC = () => {
+  const navigate = useNavigate();
+  const { showToast } = useToast();
+
+  // Initialize with verified Adama depots immediately so the map is never blank/empty on load
+  const [places, setPlaces] = useState<PlaceItem[]>(FALLBACK_ADAMA_PLACES);
+  const [loading, setLoading] = useState<boolean>(false);
+  const [searchQuery, setSearchQuery] = useState<string>('');
+  const [typeFilter, setTypeFilter] = useState<'ALL' | 'MARKETPLACE_SELLER' | 'ADMIN_MANAGED' | 'OSM_EXTERNAL'>('ALL');
+  
+  // Real Live Device/Browser GPS Location state
+  const [buyerLocation, setBuyerLocation] = useState<DetectedLocation | null>(null);
+  const [isLiveTracking, setIsLiveTracking] = useState<boolean>(false);
+  const [gpsError, setGpsError] = useState<string | null>(null);
+  const [gpsLoading, setGpsLoading] = useState<boolean>(false);
+  const [isFallbackMode, setIsFallbackMode] = useState<boolean>(false);
+
+  const [activePlace, setActivePlace] = useState<PlaceItem | null>(null);
+  const [routeInfo, setRouteInfo] = useState<RouteInfo | null>(null);
+  const [routeLoading, setRouteLoading] = useState<boolean>(false);
+
+  const mapContainerRef = useRef<HTMLDivElement>(null);
+  const mapInstanceRef = useRef<L.Map | null>(null);
+  const markersGroupRef = useRef<L.LayerGroup | null>(null);
+  const userMarkerRef = useRef<L.Marker | null>(null);
+  const accuracyCircleRef = useRef<L.Circle | null>(null);
+  const routeLayerRef = useRef<L.Polyline | null>(null);
+  const watchIdRef = useRef<number | null>(null);
+
+  // Filtered places computed via useMemo with null-safety
+  const filteredPlaces = useMemo(() => {
+    return places.filter((p) => {
+      if (typeFilter !== 'ALL' && p.placeType !== typeFilter) return false;
+      if (searchQuery.trim()) {
+        const q = searchQuery.toLowerCase();
+        const matchTitle = (p.title || '').toLowerCase().includes(q);
+        const matchAddress = (p.address || '').toLowerCase().includes(q);
+        const matchMaterials = p.materials?.some((m) => (m || '').toLowerCase().includes(q));
+        const matchCategory = (p.category || '').toLowerCase().includes(q);
+        const matchOwner = (p.ownerName || '').toLowerCase().includes(q);
+        const matchDesc = (p.description || '').toLowerCase().includes(q);
+        if (!matchTitle && !matchAddress && !matchMaterials && !matchCategory && !matchOwner && !matchDesc) return false;
+      }
+      return true;
+    });
+  }, [places, typeFilter, searchQuery]);
+
+  // Update straight-line distances client-side for live position changes
+  const updatePlacesDistances = useCallback((lat: number, lng: number) => {
+    setPlaces((prev) =>
+      prev.map((p) => {
+        if (!p.coordinates || !Array.isArray(p.coordinates) || p.coordinates.length < 2) return p;
+        const dist = calcStraightLineKm(lat, lng, p.coordinates[0], p.coordinates[1]);
+        return { ...p, distanceKm: dist };
+      })
+    );
+  }, []);
+
   // Fetch Map Places & calculate real road/haversine distance from detected coordinates
   const fetchMapPlaces = async (lat?: number, lng?: number, retryCount = 0) => {
     try {
-      if (places.length === 0) setLoading(true);
       const params: any = {};
       if (lat !== undefined && lng !== undefined && !isNaN(Number(lat)) && !isNaN(Number(lng))) {
         params.buyerLat = Number(lat);
@@ -290,20 +292,18 @@ const FALLBACK_ADAMA_PLACES: PlaceItem[] = [
       if (res.data?.success && Array.isArray(res.data.places) && res.data.places.length > 0) {
         setPlaces(res.data.places);
         setIsFallbackMode(false);
-      } else if (places.length === 0) {
-        setPlaces(FALLBACK_ADAMA_PLACES);
+      } else {
+        setPlaces((current) => (current.length > 0 ? current : FALLBACK_ADAMA_PLACES));
         setIsFallbackMode(true);
       }
     } catch (err: any) {
-      console.error('Failed to load map data', err);
-      if (retryCount < 1 && places.length === 0) {
-        setTimeout(() => fetchMapPlaces(lat, lng, retryCount + 1), 1500);
+      console.warn('Live map places note (fallback active):', err?.message);
+      if (retryCount < 1) {
+        setTimeout(() => fetchMapPlaces(lat, lng, retryCount + 1), 2000);
         return;
       }
-      if (places.length === 0) {
-        setPlaces(FALLBACK_ADAMA_PLACES);
-        setIsFallbackMode(true);
-      }
+      setPlaces((current) => (current.length > 0 ? current : FALLBACK_ADAMA_PLACES));
+      setIsFallbackMode(true);
     } finally {
       setLoading(false);
     }
@@ -813,7 +813,7 @@ const FALLBACK_ADAMA_PLACES: PlaceItem[] = [
               }`}
             >
               <Store className="w-3 h-3" />
-              <span>Sellers</span>
+              <span>Sellers ({places.filter((p) => p.placeType === 'MARKETPLACE_SELLER').length})</span>
             </button>
             <button
               onClick={() => setTypeFilter('ADMIN_MANAGED')}
@@ -824,7 +824,7 @@ const FALLBACK_ADAMA_PLACES: PlaceItem[] = [
               }`}
             >
               <Building2 className="w-3 h-3" />
-              <span>Depots</span>
+              <span>Depots ({places.filter((p) => p.placeType === 'ADMIN_MANAGED').length})</span>
             </button>
             <button
               onClick={() => setTypeFilter('OSM_EXTERNAL')}
@@ -835,7 +835,7 @@ const FALLBACK_ADAMA_PLACES: PlaceItem[] = [
               }`}
             >
               <Globe className="w-3 h-3" />
-              <span>OSM</span>
+              <span>OSM ({places.filter((p) => p.placeType === 'OSM_EXTERNAL').length})</span>
             </button>
           </div>
 
@@ -995,7 +995,20 @@ const FALLBACK_ADAMA_PLACES: PlaceItem[] = [
           {loading ? (
             <div className="p-8 text-center text-xs text-slate-400">Loading marketplace locations...</div>
           ) : filteredPlaces.length === 0 ? (
-            <div className="p-8 text-center text-xs text-slate-400">No places match your search criteria.</div>
+            <div className="p-8 text-center text-xs text-slate-500 space-y-2">
+              <p>No places match {searchQuery ? `"${searchQuery}"` : 'the selected filter'}.</p>
+              {(searchQuery || typeFilter !== 'ALL') && (
+                <button
+                  onClick={() => {
+                    setSearchQuery('');
+                    setTypeFilter('ALL');
+                  }}
+                  className="px-3 py-1 bg-slate-100 hover:bg-slate-200 text-slate-800 rounded-lg text-xs font-bold transition-colors cursor-pointer"
+                >
+                  Clear Filters
+                </button>
+              )}
+            </div>
           ) : (
             filteredPlaces.map((place) => (
               <div
