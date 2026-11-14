@@ -211,7 +211,13 @@ class ChapaProvider extends PaymentProvider {
       if (response.data?.status === 'success') {
         const d = response.data.data;
         if (d.status === 'success') {
-          return { status: 'PAID', transactionId: d.tx_ref, amount: parseFloat(d.amount), rawData: d };
+          return {
+            status: 'PAID',
+            transactionId: d.tx_ref,
+            amount: parseFloat(d.amount),
+            currency: d.currency || 'ETB',
+            rawData: d,
+          };
         }
       }
       return { status: 'FAILED', transactionId, message: response.data?.message || 'Payment verification failed on Chapa' };
@@ -229,9 +235,18 @@ class ChapaProvider extends PaymentProvider {
    */
   verifyWebhookSignature(rawBody, signatureHeader) {
     const secret = process.env.CHAPA_WEBHOOK_SECRET;
-    if (!secret || !signatureHeader) return false;
-    const expected = crypto.createHmac('sha256', secret).update(rawBody).digest('hex');
-    return crypto.timingSafeEqual(Buffer.from(signatureHeader, 'hex'), Buffer.from(expected, 'hex'));
+    if (!secret || !signatureHeader || !rawBody) return false;
+    try {
+      const expected = crypto.createHmac('sha256', secret).update(rawBody).digest('hex');
+      const sigBuf = Buffer.from(signatureHeader, 'hex');
+      const expBuf = Buffer.from(expected, 'hex');
+      if (sigBuf.length !== expBuf.length || sigBuf.length === 0) {
+        return false;
+      }
+      return crypto.timingSafeEqual(sigBuf, expBuf);
+    } catch (e) {
+      return false;
+    }
   }
 }
 
