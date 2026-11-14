@@ -717,7 +717,7 @@ exports.verifyOnlinePayment = asyncHandler(async (req, res, next) => {
     return next(new AppError('Transaction reference not found for this payment.', 400));
   }
 
-  // Idempotency
+  // Idempotency: If payment is already marked PAID, return existing order
   if (payment.status === 'PAID') {
     const order = await Order.findById(payment.order);
     return res.status(200).json({ success: true, status: 'PAID', order, message: 'Already verified' });
@@ -726,11 +726,22 @@ exports.verifyOnlinePayment = asyncHandler(async (req, res, next) => {
   const order = await Order.findById(payment.order);
   if (!order) return next(new AppError('Associated order not found.', 404));
 
+  // Downgrade protection: Do not alter an already confirmed or delivered order
+  if (order.paymentStatus === 'PAID' && ['CONFIRMED', 'DELIVERED', 'SHIPPED'].includes(order.orderStatus)) {
+    return res.status(200).json({ success: true, status: 'PAID', order, message: 'Order already fulfilled and confirmed' });
+  }
+
   const result = await PaymentService.verify(transactionId, provider);
 
   if (result.status === 'PAID') {
-    // Amount mismatch guard
-    if (result.amount && Math.abs(result.amount - payment.amount) > 1) {
+    // Currency mismatch guard
+    if (result.currency && result.currency !== 'ETB') {
+      console.error(`[SECURITY] Currency mismatch on ${transactionId}: expected ETB, got ${result.currency}`);
+      return next(new AppError('Payment currency mismatch detected. Only ETB is accepted.', 400));
+    }
+
+    // Strict amount mismatch guard (allow floating-point delta <= 0.01 ETB)
+    if (result.amount !== undefined && Math.abs(result.amount - payment.amount) > 0.01) {
       console.error(`[SECURITY] Amount mismatch on ${transactionId}: expected ${payment.amount}, got ${result.amount}`);
       payment.status = 'FAILED';
       await payment.save();
@@ -739,8 +750,16 @@ exports.verifyOnlinePayment = asyncHandler(async (req, res, next) => {
       return next(new AppError('Payment amount mismatch detected. Payment rejected for security.', 400));
     }
 
-    payment.status = 'PAID';
-    await payment.save();
+    // Atomic update prevents concurrent duplicate verification
+    const updatedPayment = await Payment.findOneAndUpdate(
+      { _id: payment._id, status: { $ne: 'PAID' } },
+      { $set: { status: 'PAID' } },
+      { new: true }
+    );
+
+    if (!updatedPayment) {
+      return res.status(200).json({ success: true, status: 'PAID', order, message: 'Already verified concurrently' });
+    }
 
     order.paymentStatus = 'PAID';
     order.orderStatus = 'CONFIRMED';
@@ -759,10 +778,12 @@ exports.verifyOnlinePayment = asyncHandler(async (req, res, next) => {
       relatedId: order._id,
     });
   } else {
-    payment.status = 'FAILED';
-    await payment.save();
-    order.paymentStatus = 'FAILED';
-    await order.save();
+    if (order.paymentStatus !== 'PAID') {
+      payment.status = 'FAILED';
+      await payment.save();
+      order.paymentStatus = 'FAILED';
+      await order.save();
+    }
   }
 
   res.status(200).json({ success: true, status: payment.status, order });
@@ -773,17 +794,19 @@ exports.verifyOnlinePayment = asyncHandler(async (req, res, next) => {
 // ─────────────────────────────────────────────────────────────────────────────
 exports.handleWebhook = asyncHandler(async (req, res, next) => {
   const { provider } = req.params;
-  const payload = req.body;
+  const payload = req.body || {};
 
-  // Chapa signature verification
-  if (provider === 'chapa') {
+  // Chapa signature verification with strict secret enforcement
+  if (provider === 'chapa' && process.env.CHAPA_WEBHOOK_SECRET) {
     const sigHeader = req.headers['x-chapa-signature'] || req.headers['chapa-signature'];
-    if (process.env.CHAPA_WEBHOOK_SECRET && sigHeader) {
-      const rawBody = req.rawBody || JSON.stringify(payload);
-      if (!PaymentService.verifyChapaWebhook(rawBody, sigHeader)) {
-        console.warn('[SECURITY] Invalid Chapa webhook signature rejected');
-        return res.status(401).json({ success: false, message: 'Invalid webhook signature' });
-      }
+    if (!sigHeader) {
+      console.warn('[SECURITY] Missing Chapa webhook signature header rejected');
+      return res.status(401).json({ success: false, message: 'Missing webhook signature' });
+    }
+    const rawBody = req.rawBody || JSON.stringify(payload);
+    if (!PaymentService.verifyChapaWebhook(rawBody, sigHeader)) {
+      console.warn('[SECURITY] Invalid Chapa webhook signature rejected');
+      return res.status(401).json({ success: false, message: 'Invalid webhook signature' });
     }
   }
 
@@ -797,8 +820,13 @@ exports.handleWebhook = asyncHandler(async (req, res, next) => {
     txRef = payload.tx_ref || payload.outTradeNo;
     status = payload.status || 'success';
   } else if (provider === 'mock') {
+    if (process.env.NODE_ENV === 'production') {
+      return res.status(403).json({ success: false, message: 'Mock provider disabled in production' });
+    }
     txRef = payload.tx_ref || payload.outTradeNo;
     status = payload.status || 'success';
+  } else {
+    return res.status(400).json({ success: false, message: 'Invalid payment provider' });
   }
 
   if (!txRef) {
@@ -808,7 +836,7 @@ exports.handleWebhook = asyncHandler(async (req, res, next) => {
   const payment = await Payment.findOne({ transactionId: txRef });
   if (!payment) return res.status(404).json({ success: false, message: 'Transaction not found' });
 
-  // Idempotency
+  // Idempotency: If already paid, return 200 without reprocessing
   if (payment.status === 'PAID') {
     return res.status(200).json({ success: true, status: 'PAID', message: 'Already processed' });
   }
@@ -816,9 +844,38 @@ exports.handleWebhook = asyncHandler(async (req, res, next) => {
   const order = await Order.findById(payment.order);
   if (!order) return res.status(404).json({ success: false, message: 'Order not found' });
 
+  // Prevent downgrade of already confirmed or delivered orders if a late failed webhook arrives
+  if (order.paymentStatus === 'PAID' && ['CONFIRMED', 'DELIVERED', 'SHIPPED'].includes(order.orderStatus)) {
+    return res.status(200).json({ success: true, status: 'PAID', message: 'Order already fulfilled and confirmed' });
+  }
+
+  // Independent Server-Side Verification against Chapa API for live Chapa transactions
+  if (provider === 'chapa' && process.env.CHAPA_SECRET_KEY && !txRef.startsWith('TX-MOCK-')) {
+    const verifyResult = await PaymentService.verify(txRef, 'CHAPA');
+    if (verifyResult.status === 'PAID') {
+      if (verifyResult.currency && verifyResult.currency !== 'ETB') {
+        return res.status(400).json({ success: false, message: 'Currency mismatch: expected ETB' });
+      }
+      if (verifyResult.amount !== undefined && Math.abs(verifyResult.amount - payment.amount) > 0.01) {
+        return res.status(400).json({ success: false, message: 'Amount mismatch in verified transaction' });
+      }
+      status = 'PAID';
+    } else {
+      status = 'FAILED';
+    }
+  }
+
   if (status === 'success' || status === 'PAID') {
-    payment.status = 'PAID';
-    await payment.save();
+    // Atomic state update prevents concurrent duplicate fulfillment races
+    const updatedPayment = await Payment.findOneAndUpdate(
+      { _id: payment._id, status: { $ne: 'PAID' } },
+      { $set: { status: 'PAID' } },
+      { new: true }
+    );
+
+    if (!updatedPayment) {
+      return res.status(200).json({ success: true, status: 'PAID', message: 'Already processed concurrently' });
+    }
 
     order.paymentStatus = 'PAID';
     order.orderStatus = 'CONFIRMED';
@@ -837,10 +894,12 @@ exports.handleWebhook = asyncHandler(async (req, res, next) => {
       relatedId: order._id,
     });
   } else {
-    payment.status = 'FAILED';
-    await payment.save();
-    order.paymentStatus = 'FAILED';
-    await order.save();
+    if (order.paymentStatus !== 'PAID') {
+      payment.status = 'FAILED';
+      await payment.save();
+      order.paymentStatus = 'FAILED';
+      await order.save();
+    }
   }
 
   res.status(200).json({ success: true, status: payment.status });
