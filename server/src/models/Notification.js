@@ -36,4 +36,10 @@ const notificationSchema = new mongoose.Schema(
 // Index for fast loading user notifications
 notificationSchema.index({ user: 1, read: 1, createdAt: -1 });
 
+// Unique compound index for payment notifications to prevent duplicates
+notificationSchema.index(
+  { user: 1, relatedId: 1, type: 1 },
+  { unique: true, partialFilterExpression: { type: 'PAYMENT' } }
+);
+
 module.exports = mongoose.model('Notification', notificationSchema);
